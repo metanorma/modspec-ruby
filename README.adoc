@@ -1,0 +1,50 @@
+= OGC ModSpec in Ruby
+
+== Purpose
+
+The `modspec` Ruby gem allows you to work with OGC ModSpec instances.
+
+NOTE: This is a work-in-progress.
+
+
+== Library
+
+=== Usage
+
+The following code generates OGC ModSpec instances in XML and YAML.
+
+[source,ruby]
+----
+require 'modspec'
+doc = IO.read('spec/fixtures/chain-rc.yaml')
+ms = Modspec::Suite.from_yaml(doc)
+puts ms.to_yaml
+----
+
+
+[source,ruby]
+----
+require 'modspec'
+doc = IO.read('spec/fixtures/chain-cc.yaml')
+ms = Modspec::Suite.from_yaml(doc)
+puts ms.to_yaml
+----
+
+
+[source,ruby]
+----
+require 'modspec'
+doc = YAML.load(IO.read('spec/fixtures/chain-rc.yaml'))['normative-statements-classes'].first
+ms = Modspec::NormativeStatementsClass.from_hash(doc)
+puts ms.to_yaml
+----
+
+== Credits
+
+This gem is developed, maintained and funded by
+https://www.ribose.com[Ribose Inc.]
+
+== License
+
+The gem is available as open source under the terms of the
+https://opensource.org/licenses/BSD-2-Clause[2-Clause BSD License].

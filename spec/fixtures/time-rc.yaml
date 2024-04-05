@@ -1,0 +1,19 @@
+---
+normative_statements_classes:
+- name: Time specification requirements
+  identifier: /req/time
+  description: |
+    Requirements on GeoPose time-related objects.
+  normative_statements:
+
+  - name: Implementation of GeoPose_Instant
+    identifier: /req/time/instant
+    statement: |
+      The `GeoPose_Instant` object shall express Unix Time in seconds multiplied
+      by 1,000, with the unit of measure in milliseconds.
+
+  - name: Implementation of GeoPose_Duration
+    identifier: /req/time/duration
+    statement: |
+      The `GeoPose_Duration` object shall express time in seconds multiplied by
+      1,000, with the unit of measure in milliseconds.

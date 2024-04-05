@@ -1,0 +1,19 @@
+---
+normative_statements_classes:
+- name: Strict JSON encoding of Basic-Quaternion SDU
+  identifier: /req/basic-quaternion-encoding-json-strict
+  description: |
+    Requirements for the JSON encoding of a Basic-Quaternion SDU in strict mode.
+    The strict encoding does not allow specification of JSON elements outside of
+    the schema.
+  implements:
+  - /req/basic-quaternion
+
+  normative_statements:
+
+  - name: Specification as JSON schema
+    identifier: /req/basic-quaternion-encoding-json-strict/definition
+    statement: |
+      A JSON-encoded Basic-Quaternion GeoPose SHALL conform to the
+      strict Basic-Quaternion JSON-Schema 2019-9 definition
+      (<<basic_quaternion_strict_json_schema>>).
