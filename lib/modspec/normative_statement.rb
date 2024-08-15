@@ -24,7 +24,9 @@ module Modspec
     attribute :parts, NormativeStatementPart, collection: true
 
     # in the future validate: recommendation, permission, requirement
-    attribute :obligation, :string
+    attribute :obligation, :string,
+      values: %w(recommendation permission requirement),
+      default: -> { "requirement" }
 
     xml do
       root "normative-statement"
@@ -42,6 +44,50 @@ module Modspec
       map_element "reference", to: :reference
       map_element "obligation", to: :obligation
       map_element "parts", to: :parts
+    end
+
+    def validate
+      errors = []
+      errors.concat(validate_dependencies)
+      errors.concat(validate_nested_requirement)
+      errors.concat(validate_type)
+      errors
+    end
+
+    private
+
+    def validate_dependencies
+      errors = []
+      all_dependencies = dependencies + indirect_dependency + implements
+      all_identifiers = Suite.instance.all_identifiers
+      all_dependencies.each do |dep|
+        unless all_identifiers.include?(dep)
+          errors << "Requirement #{identifier} has an invalid dependency: #{dep}"
+        end
+      end
+      errors
+    end
+
+    def validate_nested_requirement
+      if has_parent_requirement?
+        ["Nested requirement detected: #{identifier}"]
+      else
+        []
+      end
+    end
+
+    def validate_type
+      valid_types = ["requirement", "recommendation", "permission"]
+      unless valid_types.include?(obligation)
+        ["Invalid requirement type for #{identifier}: #{obligation}"]
+      else
+        []
+      end
+    end
+
+    def has_parent_requirement?
+      # Implementation depends on how you determine if a requirement is nested
+      false
     end
   end
 end
