@@ -18,6 +18,7 @@ module Modspec
     end
 
     def validate
+      setup_relationships
       errors = []
       errors.concat(validate_cycles)
       errors.concat(validate_label_uniqueness)
@@ -30,12 +31,15 @@ module Modspec
       raise ArgumentError, "Argument must be a Modspec::Suite" unless other_suite.is_a?(Modspec::Suite)
 
       combined_suite = self.dup
-      combined_suite.resolve_conflicts(other_suite)
+      combined_suite.normative_statements_classes += other_suite.normative_statements_classes
+      combined_suite.conformance_classes += other_suite.conformance_classes
 
-      # Update name to reflect combination
+      # Ensure uniqueness of identifiers
+      combined_suite.normative_statements_classes.uniq! { |nsc| nsc.identifier }
+      combined_suite.conformance_classes.uniq! { |cc| cc.identifier }
+
       combined_suite.name = "#{self.name} + #{other_suite.name}"
 
-      # Revalidate the combined suite
       errors = combined_suite.validate
       if errors.any?
         puts "Warning: The combined suite has validation errors:"
@@ -57,6 +61,28 @@ module Modspec
     def resolve_conflicts(other_suite)
       resolve_conflicts_for(normative_statements_classes, other_suite.normative_statements_classes)
       resolve_conflicts_for(conformance_classes, other_suite.conformance_classes)
+    end
+
+    def self.from_yaml_files(*files)
+      combined_suite = new
+      files.each do |file|
+        suite = from_yaml(File.read(file))
+        combined_suite.normative_statements_classes += suite.normative_statements_classes
+        combined_suite.conformance_classes += suite.conformance_classes
+      end
+      combined_suite.name = "Combined Suite"
+      combined_suite
+    end
+
+    def setup_relationships
+      all_requirements = normative_statements_classes.flat_map(&:normative_statements)
+
+      conformance_classes.each do |cc|
+        cc.tests.each do |ct|
+          ct.corresponding_requirement = all_requirements.find { |r| ct.targets.include?(r.identifier) }
+          ct.parent_class = cc
+        end
+      end
     end
 
     private

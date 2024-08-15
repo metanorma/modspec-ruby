@@ -34,6 +34,8 @@ module Modspec
       map_element "reference", to: :reference
     end
 
+    attr_accessor :corresponding_requirement, :parent_class
+
     def validate
       errors = []
       errors.concat(validate_requirement_mapping)
@@ -44,7 +46,7 @@ module Modspec
     private
 
     def validate_requirement_mapping
-      unless has_corresponding_requirement?
+      if corresponding_requirement.nil?
         ["Conformance test #{identifier} has no corresponding requirement"]
       else
         []
@@ -52,22 +54,10 @@ module Modspec
     end
 
     def validate_class_mapping
-      unless belongs_to_parent_class?
+      if parent_class.nil? || !parent_class.tests.include?(self)
         ["Conformance test #{identifier} does not belong to its parent class"]
       else
         []
-      end
-    end
-
-    def has_corresponding_requirement?
-      Suite.instance.normative_statements_classes.any? do |nsc|
-        nsc.normative_statements.any? { |ns| targets.include?(ns.identifier) }
-      end
-    end
-
-    def belongs_to_parent_class?
-      Suite.instance.conformance_classes.any? do |cc|
-        cc.tests.include?(self) && belongs_to.include?(cc.identifier)
       end
     end
   end
