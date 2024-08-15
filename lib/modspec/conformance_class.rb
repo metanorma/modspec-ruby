@@ -28,5 +28,22 @@ module Modspec
       map_element "description", to: :description
       map_element "reference", to: :reference
     end
+
+    def validate
+      errors = []
+      errors.concat(validate_class_children_mapping)
+      errors.concat(tests.flat_map(&:validate))
+      errors
+    end
+
+    private
+
+    def validate_class_children_mapping
+      if tests.empty?
+        ["Conformance class #{identifier} has no child conformance tests"]
+      else
+        []
+      end
+    end
   end
 end

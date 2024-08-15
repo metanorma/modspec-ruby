@@ -30,5 +30,22 @@ module Modspec
       map_element "reference", to: :reference
       map_element "source", to: :source
     end
+
+    def validate
+      errors = []
+      errors.concat(validate_class_children_mapping)
+      errors.concat(normative_statements.flat_map(&:validate))
+      errors
+    end
+
+    private
+
+    def validate_class_children_mapping
+      if normative_statements.empty?
+        ["Requirement class #{identifier} has no child requirements"]
+      else
+        []
+      end
+    end
   end
 end
