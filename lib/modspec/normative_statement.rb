@@ -50,7 +50,6 @@ module Modspec
       errors = []
       errors.concat(validate_dependencies)
       errors.concat(validate_nested_requirement)
-      errors.concat(validate_type)
       errors
     end
 
@@ -71,15 +70,6 @@ module Modspec
     def validate_nested_requirement
       if has_parent_requirement?
         ["Nested requirement detected: #{identifier}"]
-      else
-        []
-      end
-    end
-
-    def validate_type
-      valid_types = ["requirement", "recommendation", "permission"]
-      unless valid_types.include?(obligation)
-        ["Invalid requirement type for #{identifier}: #{obligation}"]
       else
         []
       end
