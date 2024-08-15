@@ -2,7 +2,8 @@
 conformance_classes:
 - name: Global SDU conformance
   identifier: /conf/global
-  target: /req/global
+  target:
+  - /req/global
   classification: "Target Type: SDU"
   description: Conformance with global SDU requirements
 

@@ -2,7 +2,8 @@
 conformance_classes:
 - name: Strict JSON encoding of Basic-Quaternion SDU
   identifier: /conf/basic-quaternion-encoding-json-strict
-  target: /req/basic-quaternion-encoding-json-strict
+  target:
+  - /req/basic-quaternion-encoding-json-strict
   classification: "Target Type: JSON SDU"
   description: Conformance with the strict JSON encoding of Basic-Quaternion SDU
 

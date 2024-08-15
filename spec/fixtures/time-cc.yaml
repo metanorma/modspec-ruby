@@ -2,7 +2,8 @@
 conformance_classes:
 - name: Time specification requirements
   identifier: /conf/time
-  target: /req/time
+  target:
+  - /req/time
   description: Conformance with GeoPose time-related requirements
 
   tests:

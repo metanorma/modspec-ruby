@@ -2,7 +2,8 @@
 conformance_classes:
 - name: Tangent point conformance
   identifier: /conf/tangent-point
-  target: /req/tangent-point
+  target:
+  - /req/tangent-point
   classification: "Target Type: SDU"
   description: Conformance with tangent point requirements
 

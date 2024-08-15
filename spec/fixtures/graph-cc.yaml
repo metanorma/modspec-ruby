@@ -2,7 +2,8 @@
 conformance_classes:
 - name: Graph logical model SDU conformance
   identifier: /conf/graph
-  target: /req/graph
+  target:
+  - /req/graph
   classification: "Target Type: SDU"
   description: To confirm that an implementation of the GeoPose Graph conforms to the Logical Model.
   dependencies:

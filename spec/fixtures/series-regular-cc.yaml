@@ -2,7 +2,8 @@
 conformance_classes:
 - name: Regular_Series logical model SDU conformance
   identifier: /conf/series-regular
-  target: /req/series-regular
+  target:
+  - /req/series-regular
   classification: "Target Type: SDU"
   description: To confirm that components of a Regular Series conform to the Logical Model.
   dependencies:

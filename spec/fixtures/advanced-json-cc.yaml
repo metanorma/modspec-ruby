@@ -2,7 +2,8 @@
 conformance_classes:
 - name: JSON encoding of Advanced SDU
   identifier: /conf/advanced-encoding-json
-  target: /req/advanced-encoding-json
+  target:
+  - /req/advanced-encoding-json
   classification: "Target Type: JSON SDU"
   description: |
     Confirm that a JSON-encoded Advanced GeoPose conforms to the

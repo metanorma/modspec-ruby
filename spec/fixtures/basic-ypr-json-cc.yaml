@@ -2,7 +2,8 @@
 conformance_classes:
 - name: JSON encoding of Basic-YPR SDU
   identifier: /conf/basic-ypr-encoding-json
-  target: /req/basic-ypr-encoding-json
+  target:
+  - /req/basic-ypr-encoding-json
   classification: "Target Type: JSON SDU"
   description: |
     Confirm that a JSON-encoded Basic-YPR GeoPose conforms to the relevant

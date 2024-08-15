@@ -2,7 +2,8 @@
 conformance_classes:
 - name: JSON encoding of Graph SDU
   identifier: /conf/graph-encoding-json
-  target: /req/graph-encoding-json
+  target:
+  - /req/graph-encoding-json
   classification: "Target Type: JSON SDU"
   description: |
     Confirm that a JSON-encoded GeoPose Graph conforms to the

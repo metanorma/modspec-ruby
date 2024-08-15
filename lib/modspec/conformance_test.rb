@@ -1,21 +1,20 @@
-require "shale"
-require_relative "./identifier"
+require "lutaml/model"
+require_relative "identifier"
 
 module Modspec
-
-  class ConformanceTest < Shale::Mapper
+  class ConformanceTest < Lutaml::Model::Serializable
     attribute :identifier, Identifier
-    attribute :name, Shale::Type::String
+    attribute :name, :string
     attribute :dependencies, Identifier, collection: true
     attribute :targets, Identifier, collection: true
     attribute :belongs_to, Identifier, collection: true
-    attribute :description, Shale::Type::String
-    attribute :guidance, Shale::Type::String, collection: true
-    attribute :purpose, Shale::Type::String
-    attribute :method, Shale::Type::String # Inspection, etc.
-    attribute :type, Shale::Type::String
-    attribute :reference, Shale::Type::String
-    attribute :abstract, Shale::Type::Boolean
+    attribute :description, :string
+    attribute :guidance, :string, collection: true
+    attribute :purpose, :string
+    attribute :method, :string # Inspection, etc.
+    attribute :type, :string
+    attribute :reference, :string
+    attribute :abstract, :boolean
 
     xml do
       root "conformance-test"
@@ -33,5 +32,4 @@ module Modspec
       map_element "reference", to: :reference
     end
   end
-
 end

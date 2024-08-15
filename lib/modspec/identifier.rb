@@ -1,7 +1,7 @@
-require "shale"
+require "lutaml/model"
 
 module Modspec
-  class Identifier < Shale::Type::String
-    # attribute :identifier, Shale::Type::String
+  class Identifier < Lutaml::Model::Type::String
+    # attribute :identifier, :string
   end
 end
