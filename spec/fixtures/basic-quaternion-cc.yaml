@@ -2,7 +2,8 @@
 conformance_classes:
 - name: Basic-Quaternion logical model SDU conformance
   identifier: /conf/basic-quaternion
-  target: /req/basic-quaternion
+  target:
+  - /req/basic-quaternion
   classification: "Target Type: SDU"
   description: Conformance with Basic-Quaternion logical model SDU
   dependencies:

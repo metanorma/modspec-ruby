@@ -2,7 +2,8 @@
 conformance_classes:
 - name: Basic-YPR logical model SDU conformance
   identifier: /conf/basic-ypr
-  target: /req/basic-ypr
+  target:
+  - /req/basic-ypr
   classification: "Target Type: SDU"
   description: Conformance with Basic-YPR logical model SDU
   dependencies:

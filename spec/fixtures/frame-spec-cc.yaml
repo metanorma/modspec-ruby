@@ -2,7 +2,8 @@
 conformance_classes:
 - name: Frame specification requirements
   identifier: /conf/frame-spec
-  target: /req/frame-spec
+  target:
+  - /req/frame-spec
   classification: "Target Type: SDU"
   description: Conformance with frame specification requirements
 

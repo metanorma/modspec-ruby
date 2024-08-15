@@ -1,28 +1,28 @@
-require "shale"
-require_relative "./identifier"
+require "lutaml/model"
+require_relative "identifier"
 
 module Modspec
-  class NormativeStatementPart < Shale::Mapper
-    attribute :statement, Shale::Type::String
+  class NormativeStatementPart < Lutaml::Model::Serializable
+    attribute :statement, :string
   end
 
-  class NormativeStatement < Shale::Mapper
+  class NormativeStatement < Lutaml::Model::Serializable
     attribute :identifier, Identifier
-    attribute :name, Shale::Type::String
-    attribute :subject, Shale::Type::String
-    attribute :statement, Shale::Type::String
-    attribute :condition, Shale::Type::String
-    attribute :guidance, Shale::Type::String
+    attribute :name, :string
+    attribute :subject, :string
+    attribute :statement, :string
+    attribute :condition, :string
+    attribute :guidance, :string
     attribute :inherit, Identifier, collection: true
     attribute :indirect_dependency, Identifier, collection: true
     attribute :implements, Identifier, collection: true
     attribute :dependencies, Identifier, collection: true
     attribute :belongs_to, Identifier, collection: true
-    attribute :reference, Shale::Type::String
-    attribute :parts, NormativeStatementPart, collection:true
+    attribute :reference, :string
+    attribute :parts, NormativeStatementPart, collection: true
 
     # in the future validate: recommendation, permission, requirement
-    attribute :obligation, Shale::Type::String
+    attribute :obligation, :string
 
     xml do
       root "normative-statement"
@@ -42,5 +42,4 @@ module Modspec
       map_element "parts", to: :parts
     end
   end
-
 end

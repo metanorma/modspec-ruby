@@ -2,7 +2,8 @@
 conformance_classes:
 - name: Basic-YPR logical model SDU conformance
   identifier: /conf/advanced
-  target: /req/advanced
+  target:
+  - /req/advanced
   classification: "Target Type: SDU"
   description: |
     To confirm that an implementation of the Advanced GeoPose conforms to

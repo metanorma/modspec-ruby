@@ -1,11 +1,11 @@
-require "shale"
+require "lutaml/model"
 
 module Modspec
-  class Suite < Shale::Mapper
+  class Suite < Lutaml::Model::Serializable
     attribute :identifier, Identifier
-    attribute :name, Shale::Type::String
-    attribute :normative_statements_classes, NormativeStatementsClass, collection:true
-    attribute :conformance_classes, ConformanceClass, collection:true
+    attribute :name, :string
+    attribute :normative_statements_classes, NormativeStatementsClass, collection: true
+    attribute :conformance_classes, ConformanceClass, collection: true
 
     xml do
       root "suite"

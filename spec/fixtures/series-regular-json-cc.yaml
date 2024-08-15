@@ -2,7 +2,8 @@
 conformance_classes:
 - name: JSON encoding of Regular Series SDU
   identifier: /conf/series-regular-encoding-json
-  target: /req/series-regular-encoding-json
+  target:
+  - /req/series-regular-encoding-json
   classification: "Target Type: JSON SDU"
   description: |
     Confirm that a JSON-encoded GeoPose Regular Series conforms to the

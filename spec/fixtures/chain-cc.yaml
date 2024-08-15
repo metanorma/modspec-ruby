@@ -2,7 +2,8 @@
 conformance_classes:
 - name: Chain logical model SDU conformance
   identifier: /conf/chain
-  target: /req/chain
+  target:
+  - /req/chain
   classification: "Target Type: SDU"
   description: To confirm that an implementation of the GeoPose Chain conforms to the Logical Model.
   dependencies:

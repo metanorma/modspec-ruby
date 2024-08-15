@@ -1,20 +1,19 @@
-require "shale"
-require_relative "./normative_statement"
-require_relative "./identifier"
+require "lutaml/model"
+require_relative "normative_statement"
+require_relative "identifier"
 
 module Modspec
-
-  class NormativeStatementsClass < Shale::Mapper
+  class NormativeStatementsClass < Lutaml::Model::Serializable
     attribute :identifier, Identifier
-    attribute :name, Shale::Type::String
-    attribute :description, Shale::Type::String
-    attribute :subject, Shale::Type::String
-    attribute :guidance, Shale::Type::String
+    attribute :name, :string
+    attribute :description, :string
+    attribute :subject, :string
+    attribute :guidance, :string
     attribute :dependencies, Identifier, collection: true
     attribute :normative_statements, NormativeStatement, collection: true
     attribute :belongs_to, Identifier, collection: true
-    attribute :reference, Shale::Type::String
-    attribute :source, Shale::Type::String
+    attribute :reference, :string
+    attribute :source, :string
 
     xml do
       root "normative-statements-class"
@@ -30,5 +29,4 @@ module Modspec
       map_element "source", to: :source
     end
   end
-
 end

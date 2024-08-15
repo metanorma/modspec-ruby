@@ -2,7 +2,8 @@
 conformance_classes:
 - name: JSON encoding of Irregular Series SDU
   identifier: /conf/series-irregular-encoding-json
-  target: /req/series-irregular-encoding-json
+  target:
+  - /req/series-irregular-encoding-json
   classification: "Target Type: JSON SDU"
   description: |
     Confirm that a JSON-encoded GeoPose Irregular Series conforms to the

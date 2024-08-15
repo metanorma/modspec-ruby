@@ -2,7 +2,8 @@
 conformance_classes:
 - name: Irregular_Series logical model SDU conformance
   identifier: /conf/series-irregular
-  target: /req/series-irregular
+  target:
+  - /req/series-irregular
   classification: "Target Type: SDU"
   description: To confirm that components of a Irregular_Series conform to the Logical Model.
   dependencies:
