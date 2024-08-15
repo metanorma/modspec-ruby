@@ -16,7 +16,6 @@ require_relative "modspec/conformance_test"
 require_relative "modspec/conformance_class"
 require_relative "modspec/suite"
 
-require "lutaml/model"
 require "lutaml/model/xml_adapter/nokogiri_adapter"
 require "lutaml/model/json_adapter/standard_json_adapter"
 require "lutaml/model/toml_adapter/toml_rb_adapter"

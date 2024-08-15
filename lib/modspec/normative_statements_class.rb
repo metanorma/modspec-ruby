@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "lutaml/model"
 require_relative "normative_statement"
 require_relative "identifier"
