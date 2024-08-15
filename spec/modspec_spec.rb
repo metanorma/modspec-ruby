@@ -8,21 +8,18 @@ RSpec.describe Modspec do
   Dir.glob("spec/fixtures/*-rc.yaml").each do |file|
     it "parses normative statements class #{file}" do
       yaml = IO.read(file)
-      ms = Modspec::Suite.from_yaml(yaml)
+      Modspec::Suite.from_yaml(yaml)
 
       # TODO: tests
-
     end
   end
 
   Dir.glob("spec/fixtures/*-cc.yaml").each do |file|
     it "parses conformance class #{file}" do
       yaml = IO.read(file)
-      ms = Modspec::Suite.from_yaml(yaml)
+      Modspec::Suite.from_yaml(yaml)
 
       # TODO: tests
-
     end
   end
-
 end
