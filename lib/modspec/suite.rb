@@ -56,7 +56,9 @@ module Modspec
 
     def all_identifiers
       @all_identifiers ||= (normative_statements_classes.flat_map(&:normative_statements) +
-                            conformance_classes.flat_map(&:tests)).map(&:identifier)
+                            conformance_classes.flat_map(&:tests) +
+                            normative_statements_classes +
+                            conformance_classes).map(&:identifier)
     end
 
     def resolve_conflicts(other_suite)
