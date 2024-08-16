@@ -25,8 +25,8 @@ module Modspec
 
     # in the future validate: recommendation, permission, requirement
     attribute :obligation, :string,
-      values: %w(recommendation permission requirement),
-      default: -> { "requirement" }
+              values: %w[recommendation permission requirement],
+              default: -> { "requirement" }
 
     xml do
       root "normative-statement"
@@ -60,9 +60,7 @@ module Modspec
       all_dependencies = (dependencies + indirect_dependency + implements).flatten.compact.map(&:to_s)
       all_identifiers = Suite.instance.all_identifiers.map(&:to_s)
       all_dependencies.each do |dep|
-        unless all_identifiers.include?(dep)
-          errors << "Requirement #{identifier} has an invalid dependency: #{dep}"
-        end
+        errors << "Requirement #{identifier} has an invalid dependency: #{dep}" unless all_identifiers.include?(dep)
       end
       errors
     end

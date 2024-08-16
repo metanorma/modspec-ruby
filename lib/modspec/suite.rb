@@ -31,15 +31,15 @@ module Modspec
     def combine(other_suite)
       raise ArgumentError, "Argument must be a Modspec::Suite" unless other_suite.is_a?(Modspec::Suite)
 
-      combined_suite = self.dup
+      combined_suite = dup
       combined_suite.normative_statements_classes += other_suite.normative_statements_classes
       combined_suite.conformance_classes += other_suite.conformance_classes
 
       # Ensure uniqueness of identifiers
-      combined_suite.normative_statements_classes.uniq! { |nsc| nsc.identifier }
-      combined_suite.conformance_classes.uniq! { |cc| cc.identifier }
+      combined_suite.normative_statements_classes.uniq!(&:identifier)
+      combined_suite.conformance_classes.uniq!(&:identifier)
 
-      combined_suite.name = "#{self.name} + #{other_suite.name}"
+      combined_suite.name = "#{name} + #{other_suite.name}"
 
       errors = combined_suite.validate
       if errors.any?
@@ -79,7 +79,9 @@ module Modspec
 
       conformance_classes.each do |cc|
         cc.tests.each do |ct|
-          ct.corresponding_requirements = all_requirements.select { |r| ct.targets.map(&:to_s).include?(r.identifier.to_s) }
+          ct.corresponding_requirements = all_requirements.select do |r|
+            ct.targets.map(&:to_s).include?(r.identifier.to_s)
+          end
           ct.parent_class = cc
         end
       end
@@ -101,7 +103,8 @@ module Modspec
 
     def merge_attributes(existing_item, other_item)
       existing_item.class.attribute_names.each do |attr|
-        next if [:identifier, :name].include?(attr)
+        next if %i[identifier name].include?(attr)
+
         if existing_item.send(attr).is_a?(Array)
           existing_item.send(attr).concat(other_item.send(attr)).uniq!
         elsif existing_item.send(attr).nil?
@@ -138,8 +141,8 @@ module Modspec
       visited = Set.new
       recursion_stack = Set.new
 
-      graph.keys.each do |node|
-        if !visited.include?(node)
+      graph.each_key do |node|
+        unless visited.include?(node)
           cycle = detect_cycle_util(node, graph, visited, recursion_stack, [])
           cycles << cycle if cycle
         end
@@ -160,7 +163,7 @@ module Modspec
             cycle = detect_cycle_util(neighbor, graph, visited, recursion_stack, path)
             return cycle if cycle
           elsif recursion_stack.include?(neighbor)
-            return path[path.index(neighbor)..-1] + [neighbor]
+            return path[path.index(neighbor)..] + [neighbor]
           end
         end
       else
@@ -232,9 +235,7 @@ module Modspec
     def validate_class_dependencies(klass, all_identifiers)
       errors = []
       klass.dependencies&.each do |dep|
-        unless all_identifiers.key?(dep.to_s)
-          errors << "Invalid dependency #{dep} in #{klass.identifier}"
-        end
+        errors << "Invalid dependency #{dep} in #{klass.identifier}" unless all_identifiers.key?(dep.to_s)
       end
       errors
     end
@@ -242,9 +243,7 @@ module Modspec
     def validate_statement_dependencies(statement, all_identifiers)
       errors = []
       statement.dependencies&.each do |dep|
-        unless all_identifiers.key?(dep.to_s)
-          errors << "Invalid dependency #{dep} in #{statement.identifier}"
-        end
+        errors << "Invalid dependency #{dep} in #{statement.identifier}" unless all_identifiers.key?(dep.to_s)
       end
       errors
     end
@@ -252,9 +251,7 @@ module Modspec
     def validate_test_targets(test, all_identifiers)
       errors = []
       test.targets&.each do |target|
-        unless all_identifiers.key?(target.to_s)
-          errors << "Invalid target #{target} in #{test.identifier}"
-        end
+        errors << "Invalid target #{target} in #{test.identifier}" unless all_identifiers.key?(target.to_s)
       end
       errors
     end
