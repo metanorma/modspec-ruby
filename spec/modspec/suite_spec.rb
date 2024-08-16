@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Modspec::Suite do
   let(:rc_yaml) { File.read("spec/fixtures/basic-ypr-rc.yaml") }
   let(:cc_yaml) { File.read("spec/fixtures/basic-ypr-cc.yaml") }
@@ -30,10 +32,10 @@ RSpec.describe Modspec::Suite do
     it "returns no errors for a valid combined suite" do
       base_suite = described_class.from_yaml(rc_yaml)
       combined_suite = base_suite
-        .combine(global_suite)
-        .combine(tangent_point_suite)
-        .combine(time_suite)
-        .combine(frame_spec_suite)
+                       .combine(global_suite)
+                       .combine(tangent_point_suite)
+                       .combine(time_suite)
+                       .combine(frame_spec_suite)
 
       errors = combined_suite.validate
       if errors.any?
@@ -59,11 +61,11 @@ RSpec.describe Modspec::Suite do
 
     it "resolves conflicts when combining suites" do
       combined_suite = suite1
-        .combine(suite2)
-        .combine(global_suite)
-        .combine(tangent_point_suite)
-        .combine(time_suite)
-        .combine(frame_spec_suite)
+                       .combine(suite2)
+                       .combine(global_suite)
+                       .combine(tangent_point_suite)
+                       .combine(time_suite)
+                       .combine(frame_spec_suite)
 
       errors = combined_suite.validate
       if errors.any?

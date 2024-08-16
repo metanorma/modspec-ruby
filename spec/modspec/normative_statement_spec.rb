@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 RSpec.describe Modspec::NormativeStatement do
   let(:global_sdu_statement) do
     Modspec::NormativeStatement.new(
       identifier: "/req/global/sdu",
       name: "SDU conforms to the 'Structural Data Unit - SDU' stereotype",
-      statement: "Implementations using encoded SDUs SHALL conform to the logical description of the Logical Model elements with the 'Structural Data Unit - SDU' stereotype.",
+      statement: "Implementations using encoded SDUs SHALL conform to the logical description of the Logical Model elements with the 'Structural Data Unit - SDU' stereotype."
     )
   end
 
@@ -11,7 +13,7 @@ RSpec.describe Modspec::NormativeStatement do
     Modspec::NormativeStatement.new(
       identifier: "/req/tangent-point",
       name: "Tangent point requirements",
-      statement: "Common tangent point requirements for SDUs that include tangent points.",
+      statement: "Common tangent point requirements for SDUs that include tangent points."
     )
   end
 
@@ -24,7 +26,7 @@ RSpec.describe Modspec::NormativeStatement do
       subject: "Basic_YPR.position",
       inherit: ["/req/global/sdu"],
       dependencies: ["/req/tangent-point"],
-      guidance: "Ensure the coordinate system is correctly specified.",
+      guidance: "Ensure the coordinate system is correctly specified."
     )
   end
 
@@ -32,15 +34,15 @@ RSpec.describe Modspec::NormativeStatement do
     suite = Modspec::Suite.new
     global_class = Modspec::NormativeStatementsClass.new(
       identifier: "/req/global",
-      normative_statements: [global_sdu_statement],
+      normative_statements: [global_sdu_statement]
     )
     tangent_point_class = Modspec::NormativeStatementsClass.new(
       identifier: "/req/tangent-point",
-      normative_statements: [tangent_point_statement],
+      normative_statements: [tangent_point_statement]
     )
     basic_ypr_class = Modspec::NormativeStatementsClass.new(
       identifier: "/req/basic-ypr",
-      normative_statements: [normative_statement],
+      normative_statements: [normative_statement]
     )
     suite.normative_statements_classes = [global_class, tangent_point_class, basic_ypr_class]
     suite
@@ -63,7 +65,7 @@ RSpec.describe Modspec::NormativeStatement do
   end
 
   it "has a valid obligation" do
-    expect(["requirement", "recommendation", "permission"]).to include(normative_statement.obligation)
+    expect(%w[requirement recommendation permission]).to include(normative_statement.obligation)
   end
 
   describe "#validate" do
