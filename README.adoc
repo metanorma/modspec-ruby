@@ -2,42 +2,536 @@
 
 == Purpose
 
-The `modspec` Ruby gem allows you to work with OGC ModSpec instances.
+The `modspec` Ruby library allows you to work with OGC ModSpec instances
+and export/load them from/to YAML.
 
-NOTE: This is a work-in-progress.
+OGC ModSpec is a specification for specifying requirements and conformance tests
+for standards, described in OGC 08-131r3.
+
+== Features
+
+This library allows you to:
+
+* Create and manipulate ModSpec instances:
+** normative statements
+** conformance tests
+** normative statements classes
+** conformance classes
+** unified ModSpec suite
+
+* Load and save objects from/to YAML
+* Perform validations on ModSpec instances
+* Combine ModSpec suites
 
 
-== Library
+== Installation
 
-=== Usage
+Add this line to your application's Gemfile:
 
-The following code generates OGC ModSpec instances in XML and YAML.
+[source,ruby]
+----
+gem 'modspec'
+----
+
+Then execute:
+
+[source,shell]
+----
+$ bundle install
+----
+
+Or install it yourself:
+
+[source,shell]
+----
+$ gem install modspec
+----
+
+== Basics
+
+ModSpec instances all have the following core attributes:
+
+`identifier`:: A unique identifier for the instance, as a URI.
+
+** The pattern for a ModSpec class is `/<type>/<class>`, where
+*** `<type>` is the type of the instance (`req` for normative statement, `conf` for conformance test)
+*** `<class>` is the name of the class (normative statements class or conformance class)
+
+** The pattern for a normative statement or conformance test is `/<type>/<class>/<name>`, where
+
+*** `<type>` is the type of the instance (`req` for normative statement, `conf` for conformance test)
+*** `<class>` is the name of the class (normative statements class or conformance class)
+*** `<name>` is the name of the instance
+
+`name`::
+A human-readable name for the instance
+
+`description`::
+A description of the instance
+
+
+
+== Usage
+
+=== Normative statements class
+
+A normative statements class groups related normative statements.
+
+A normative statements class has the following attributes in addition to the core attributes:
+
+`subject`::
+The subject of the normative statements class
+
+`guidance`::
+Guidance on how to implement the class
+
+`dependencies`::
+URI(s) of normative statement classes that this class depends on
+
+`normative_statements`::
+A list of normative statements that belong to this class
+
+`belongs_to`::
+The normative statements class that this class belongs to
+
+`reference`::
+A reference to an external document or resource
+
+`source`::
+The source of the normative statements class
+
+
+.Working with normative statements classes
+[example]
+====
+[source,ruby]
+----
+normative_statements_class = Modspec::NormativeStatementsClass.new(
+  identifier: "/req/example",
+  name: "Requirements class",
+  dependencies: ["/req/baf"],
+  normative_statements: [normative_statement]
+)
+----
+
+[source,ruby]
+----
+normative_statements_class.to_yaml
+----
+
+[source,yaml]
+----
+identifier: "/req/example"
+name: "Requirements class"
+dependencies:
+- "/req/baf"
+normative_statements:
+- identifier: "/req/example/foo"
+  name: "Example requirement"
+  statement: "This is an example requirement."
+  dependencies:
+  - "/req/bar"
+  - "/req/baz/2"
+----
+
+[source,ruby]
+----
+> yaml = IO.read('example.yaml')
+> normative_statements_class = Modspec::NormativeStatementsClass.from_yaml(yaml)
+> <#Modspec::NormativeStatementsClass:0x00007f8b1b8b3d08 @identifier="/req/example", @name="Requirements class", @dependencies=["/req/baf"], @normative_statements=[<#Modspec::NormativeStatement:0x00007f8b1b8b3d08 @identifier="/req/example/foo", @name="Example requirement", @statement="This is an example requirement.", @dependencies=["/req/bar", "/req/baz/2"]>]>
+> normative_statements_class.name
+> "Requirements class"
+----
+====
+
+Validations:
+
+* *Identifier prefix*: All normative statements within a normative statements
+class must share the same identifier prefix as the class itself, followed by a
+slash and then the statement's own identifier.
+
+
+=== Normative statement
+
+A normative statement represents a single requirement in the specification.
+
+A normative statement has the following attributes in addition to the core attributes:
+
+`subject`::
+The subject of the normative statement
+
+`obligation`::
+The obligation level of the class, one of `requirement`, `recommendation`, `permission`. Defaults to `requirement`.
+
+`statement`::
+The text of the normative statement
+
+`condition`::
+Conditions that must be met for the statement to apply
+
+`guidance`::
+Guidance on how to implement the statement
+
+`inherit`::
+URI(s) of normative statement(s) that this statement inherits from
+
+`indirect_dependency`::
+URI(s) of normative statement(s) that this statement indirectly depends on
+
+`implements`::
+The higher-level normative statement that this statement implements
+
+`dependencies`::
+A list of identifiers for other normative statements that this statement depends on.
+
+`belongs_to`::
+The normative statements class that this statement belongs to.
+
+`reference`::
+A reference to an external document or resource
+
+`parts`::
+A list of normative statements classes that this class is composed
+
+
+.Working with normative statements
+[example]
+====
+[source,ruby]
+----
+normative_statement = Modspec::NormativeStatement.new(
+  identifier: "/req/example/foo",
+  name: "Example requirement",
+  statement: "This is an example requirement statement.",
+  obligation: "requirement", # default
+  parts: [
+    "This is a part of the requirement.",
+    "This is another part of the requirement."
+  ]
+  dependencies: ["/req/bar", "/req/baz/2"]
+)
+----
+
+[source,ruby]
+----
+normative_statement.to_yaml
+----
+
+Will give out:
+
+[source,yaml]
+----
+identifier: /req/example/foo
+name: Example requirement
+statement: This is an example requirement statement.
+dependencies:
+- /req/bar
+- /req/baz/2
+----
+
+And to load a normative statement from a YAML file:
+
+[source,ruby]
+----
+> yaml = IO.read('example-foo.yaml')
+> normative_statement = Modspec::NormativeStatement.from_yaml(yaml)
+> <#Modspec::NormativeStatement:0x00007f8b1b8b3d08 @identifier="/req/example/foo", @name="Example requirement", @statement="This is an example requirement statement.", @dependencies=["/req/bar", "/req/baz/2"]>
+> normative_statement.name
+> "Example requirement"
+----
+====
+
+
+Validations:
+
+* *Unique identifier*: Each normative statement must have a unique identifier
+within its parent normative statements class.
+
+* *Valid dependencies*: The dependencies listed for a normative statement must
+refer to valid identifiers of other normative statements.
+
+
+=== Conformance class
+
+A conformance class groups related conformance tests.
+
+A conformance class has the following attributes in addition to the core attributes:
+
+`tests`::
+A set of conformance tests that belong to this class
+
+`classification`::
+A classification of the conformance class
+
+`dependencies`::
+A list of identifiers for other conformance classes that this class depends on
+
+`target`::
+A list of identifiers of normative statement(s) that this class targets
+
+`belongs_to`::
+A conformance class that this class belongs to
+
+`reference`::
+A reference to an external document or resource
+
+
+.Working with conformance classes
+[example]
+====
+[source,ruby]
+----
+conformance_class = Modspec::ConformanceClass.new(
+  identifier: "/conf/example",
+  name: "Conformance class",
+  tests: [conformance_test]
+)
+conformance_class.to_yaml
+----
+
+[source,yaml]
+----
+identifier: "/conf/example"
+name: "Conformance class"
+tests:
+- identifier: "/conf/example/foo"
+  name: "Example test"
+  description: "This is an example conformance test."
+  targets:
+  - "/req/example/foo"
+----
+
+[source,ruby]
+----
+> yaml = IO.read('example.yaml')
+> conformance_class = Modspec::ConformanceClass.from_yaml(yaml)
+> <#Modspec::ConformanceClass:0x00007f8b1b8b3d08 @identifier="/conf/example", @name="Conformance class", @tests=[<#Modspec::ConformanceTest:0x00007f8b1b8b3d08 @identifier="/conf/example/foo", @name="Example test", @description="This is an example conformance test.", @targets=["/req/example/foo"]>], @abstract=false>
+> conformance_class.name
+> "Conformance class"
+----
+====
+
+
+Validations:
+
+* *Identifier prefix*: All conformance tests within a conformance class must
+share the same identifier prefix as the class itself, followed by a slash and
+then the test's own identifier.
+
+* *Valid targets*: The targets listed for a conformance test must refer to valid
+identifiers of existing normative statements.
+
+
+
+=== Conformance test
+
+A conformance test verifies compliance with one or more normative statements.
+
+A conformance test has the following attributes in addition to the core attributes:
+
+`targets`::
+A list of identifiers for normative statements that this test targets
+
+`belongs_to`::
+The conformance class that this test belongs to
+
+`guidance`::
+Guidance on how to perform the test
+
+`purpose`::
+The purpose of the test
+
+`method`::
+The method used to perform the test
+
+`type`::
+The type of the test
+
+`reference`::
+A reference to an external document or resource
+
+`abstract`::
+A boolean indicating whether this test is abstract
+
+
+
+.Working with conformance tests
+[example]
+====
+[source,ruby]
+----
+conformance_test = Modspec::ConformanceTest.new(
+  identifier: "/conf/example/foo",
+  name: "Example test",
+  description: "This is an example conformance test.",
+  targets: ["/req/example/foo"],
+  test_method: "manual",
+  abstract: false
+)
+conformance_test.to_yaml
+----
+
+[source,yaml]
+----
+identifier: "/conf/example/foo"
+name: "Example test"
+description: "This is an example conformance test."
+abstract: false
+test_method: "manual"
+targets:
+- "/req/example/foo"
+----
+
+[source,ruby]
+----
+> yaml = IO.read('example.yaml')
+> conformance_test = Modspec::ConformanceTest.from_yaml(yaml)
+> <#Modspec::ConformanceTest:0x00007f8b1b8b3d08 @identifier="/conf/example/foo", @name="Example test", @description="This is an example conformance test.", @targets=["/req/example/foo"], @test_method="manual", @abstract=false>
+> conformance_test.name
+> "Example test"
+----
+====
+
+
+Validations:
+
+* *Valid targets*: The targets listed for a conformance test must refer to valid
+identifiers of existing normative statements.
+
+
+=== Suite
+
+A suite represents the entire specification, including all normative statements
+and conformance tests.
+
+NOTE: This is not defined in the ModSpec specification.
+
+.Working with suites
+[example]
+====
+[source,ruby]
+----
+suite = Modspec::Suite.new(
+  identifier: "example-suite",
+  name: "Example suite",
+  normative_statements_classes: [normative_statements_class],
+  conformance_classes: [conformance_class]
+)
+suite.to_yaml
+----
+
+[source,yaml]
+----
+identifier: "example-suite"
+name: "Example suite"
+normative_statements_classes:
+  - identifier: "/req/example"
+    name: "Requirements class"
+    normative_statements:
+      - identifier: "/req/example/foo"
+        name: "Example requirement"
+        statement: "This is an example requirement statement."
+        dependencies:
+          - "/req/bar"
+          - "/req/baz/2"
+conformance_classes:
+  - identifier: "/conf/example"
+    name: "Conformance class"
+    tests:
+      - identifier: "/conf/example/foo"
+        name: "Example test"
+        description: "This is an example conformance test."
+        targets:
+          - "/req/example/foo"
+----
+
+[source,ruby]
+----
+> yaml = IO.read('example-suite.yaml')
+> suite = Modspec::Suite.from_yaml(yaml)
+> <#Modspec::Suite:0x00007f8b1b8b3d08 @identifier="example-suite", @name="Example suite", @normative_statements_classes=[<#Modspec::NormativeStatementsClass:0x00007f8b1b8b3d08 @identifier="/req/example", @name="Requirements class", @dependencies=["/req/baf"], @normative_statements=[<#Modspec::NormativeStatement:0x00007f8b1b8b3d08 @identifier="/req/example/foo", @name="Example requirement", @statement="This is an example requirement statement.", @dependencies=["/req/bar", "/req/baz/2"]>]>], @conformance_classes=[<#Modspec::ConformanceClass:0x00007f8b1b8b3d08 @identifier="/conf/example", @name="Conformance class", @tests=[<#Modspec::ConformanceTest:0x00007f8b1b8b3d08 @identifier="/conf/example/foo", @name="Example test", @description="This is an example conformance test.", @targets=["/req/example/foo"]>], @abstract=false>]>
+> suite.normative_statements_classes.first.name
+> "Requirements class"
+----
+====
+
+Validations:
+
+* *No cyclic dependencies*: The suite ensures that there are no circular
+dependencies among normative statements.
+
+* *Label uniqueness*: Labels must be unique across all classes within the suite.
+
+* *Dependency validation*: The suite verifies that all dependencies between
+normative statements and conformance tests are valid and refer to existing
+elements.
+
+
+The Suite class provides a `from_yaml_files` method to load a Suite instance
+from multiple YAML files. This is particularly useful when your specification is
+split across several files for better organization and maintainability.
+
+To load a Suite from multiple YAML files:
 
 [source,ruby]
 ----
 require 'modspec'
-doc = IO.read('spec/fixtures/chain-rc.yaml')
-ms = Modspec::Suite.from_yaml(doc)
-puts ms.to_yaml
+
+# Specify the paths to your YAML files
+yaml_files = [
+  'path/to/normative_statements.yaml',
+  'path/to/conformance_tests.yaml'
+]
+
+# Create a Suite instance from the YAML files
+suite = Modspec::Suite.from_yaml_files(yaml_files)
+
+# Now you can work with the suite object
+puts suite.name
+puts suite.normative_statements_classes.count
+puts suite.conformance_classes.count
 ----
 
+
+The `Suite` class provides a `combine` method to merge two suites:
 
 [source,ruby]
 ----
-require 'modspec'
-doc = IO.read('spec/fixtures/chain-cc.yaml')
-ms = Modspec::Suite.from_yaml(doc)
-puts ms.to_yaml
+combined_suite = suite1.combine(suite2)
 ----
 
+This method merges the two suites into a single suite, ensuring that the
+resulting suite is consistent and free of conflicts.
+
+
+=== Validation process
+
+Validations are typically performed when:
+
+. Creating or modifying individual elements (normative statements, conformance tests, etc.)
+. Adding elements to their respective classes
+. Combining suites
+. Loading a suite from YAML or other formats
+
+If any validation fails, an error or a collection of errors is returned,
+describing the specific validation issues encountered.
+
+To manually trigger validation on a suite:
 
 [source,ruby]
 ----
-require 'modspec'
-doc = YAML.load(IO.read('spec/fixtures/chain-rc.yaml'))['normative-statements-classes'].first
-ms = Modspec::NormativeStatementsClass.from_hash(doc)
-puts ms.to_yaml
+errors = suite.validate
+if errors.any?
+  puts "Validation errors:"
+  errors.each { |error| puts "- #{error}" }
+else
+  puts "Suite is valid."
+end
 ----
+
+These validation mechanisms help ensure that the created ModSpec instances are
+consistent, well-formed, and adhere to the expected structure and relationships.
+
 
 == Credits
 

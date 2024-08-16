@@ -31,6 +31,7 @@ module Modspec
 
     def validate
       errors = []
+      errors.concat(validate_identifier_prefix)
       errors.concat(validate_class_children_mapping)
       errors.concat(tests.flat_map(&:validate))
       errors
@@ -44,6 +45,17 @@ module Modspec
       else
         []
       end
+    end
+
+    def validate_identifier_prefix
+      errors = []
+      expected_prefix = "#{identifier}/"
+      tests.each do |test|
+        unless test.identifier.to_s.start_with?(expected_prefix)
+          errors << "Conformance test #{test.identifier} does not share the expected prefix #{expected_prefix}"
+        end
+      end
+      errors
     end
   end
 end
