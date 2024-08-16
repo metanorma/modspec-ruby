@@ -22,6 +22,7 @@ module Modspec
       errors = []
       errors.concat(validate_cycles)
       errors.concat(validate_label_uniqueness)
+      errors.concat(validate_dependencies)
       errors.concat(normative_statements_classes.flat_map(&:validate))
       errors.concat(conformance_classes.flat_map(&:validate))
       errors
@@ -67,8 +68,7 @@ module Modspec
       combined_suite = new
       files.each do |file|
         suite = from_yaml(File.read(file))
-        combined_suite.normative_statements_classes += suite.normative_statements_classes
-        combined_suite.conformance_classes += suite.conformance_classes
+        combined_suite = combined_suite.combine(suite)
       end
       combined_suite.name = "Combined Suite"
       combined_suite
@@ -79,7 +79,7 @@ module Modspec
 
       conformance_classes.each do |cc|
         cc.tests.each do |ct|
-          ct.corresponding_requirement = all_requirements.find { |r| ct.targets.include?(r.identifier) }
+          ct.corresponding_requirements = all_requirements.select { |r| ct.targets.map(&:to_s).include?(r.identifier.to_s) }
           ct.parent_class = cc
         end
       end
@@ -121,17 +121,13 @@ module Modspec
       all_statements = normative_statements_classes.flat_map(&:normative_statements) +
                        conformance_classes.flat_map(&:tests)
 
-      # First, create an entry for every statement
       all_statements.each do |statement|
-        graph[statement.identifier] = []
-      end
-
-      # Then, add dependencies
-      all_statements.each do |statement|
-        graph[statement.identifier] += statement.dependencies if statement.respond_to?(:dependencies)
-        graph[statement.identifier] += statement.indirect_dependency if statement.respond_to?(:indirect_dependency)
-        graph[statement.identifier] += statement.implements if statement.respond_to?(:implements)
-        graph[statement.identifier] += statement.targets if statement.respond_to?(:targets)
+        id = statement.identifier.to_s
+        graph[id] = Set.new
+        graph[id].merge(statement.dependencies.map(&:to_s)) if statement.respond_to?(:dependencies)
+        graph[id].merge(statement.indirect_dependency.map(&:to_s)) if statement.respond_to?(:indirect_dependency)
+        graph[id].merge(statement.implements.map(&:to_s)) if statement.respond_to?(:implements)
+        graph[id].merge(statement.targets.map(&:to_s)) if statement.respond_to?(:targets)
       end
 
       graph
@@ -187,6 +183,77 @@ module Modspec
           errors << "Duplicate identifier found: #{statement.identifier}"
         else
           labels[statement.identifier] = true
+        end
+      end
+      errors
+    end
+
+    def validate_dependencies
+      all_identifiers = collect_all_identifiers
+
+      errors = []
+      normative_statements_classes.each do |nsc|
+        errors.concat(validate_class_dependencies(nsc, all_identifiers))
+        nsc.normative_statements.each do |ns|
+          errors.concat(validate_statement_dependencies(ns, all_identifiers))
+        end
+      end
+
+      conformance_classes.each do |cc|
+        errors.concat(validate_class_dependencies(cc, all_identifiers))
+        cc.tests.each do |ct|
+          errors.concat(validate_test_targets(ct, all_identifiers))
+        end
+      end
+
+      errors
+    end
+
+    def collect_all_identifiers
+      identifiers = {}
+
+      normative_statements_classes.each do |nsc|
+        identifiers[nsc.identifier.to_s] = nsc
+        nsc.normative_statements.each do |ns|
+          identifiers[ns.identifier.to_s] = ns
+        end
+      end
+
+      conformance_classes.each do |cc|
+        identifiers[cc.identifier.to_s] = cc
+        cc.tests.each do |ct|
+          identifiers[ct.identifier.to_s] = ct
+        end
+      end
+
+      identifiers
+    end
+
+    def validate_class_dependencies(klass, all_identifiers)
+      errors = []
+      klass.dependencies&.each do |dep|
+        unless all_identifiers.key?(dep.to_s)
+          errors << "Invalid dependency #{dep} in #{klass.identifier}"
+        end
+      end
+      errors
+    end
+
+    def validate_statement_dependencies(statement, all_identifiers)
+      errors = []
+      statement.dependencies&.each do |dep|
+        unless all_identifiers.key?(dep.to_s)
+          errors << "Invalid dependency #{dep} in #{statement.identifier}"
+        end
+      end
+      errors
+    end
+
+    def validate_test_targets(test, all_identifiers)
+      errors = []
+      test.targets&.each do |target|
+        unless all_identifiers.key?(target.to_s)
+          errors << "Invalid target #{target} in #{test.identifier}"
         end
       end
       errors

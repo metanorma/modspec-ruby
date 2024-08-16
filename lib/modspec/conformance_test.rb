@@ -34,7 +34,7 @@ module Modspec
       map_element "reference", to: :reference
     end
 
-    attr_accessor :corresponding_requirement, :parent_class
+    attr_accessor :corresponding_requirements, :parent_class
 
     def validate
       errors = []
@@ -46,8 +46,8 @@ module Modspec
     private
 
     def validate_requirement_mapping
-      if corresponding_requirement.nil?
-        ["Conformance test #{identifier} has no corresponding requirement"]
+      if corresponding_requirements.empty?
+        ["Conformance test #{identifier} has no corresponding requirements"]
       else
         []
       end

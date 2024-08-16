@@ -33,12 +33,24 @@ module Modspec
 
     def validate
       errors = []
+      errors.concat(validate_identifier_prefix)
       errors.concat(validate_class_children_mapping)
       errors.concat(normative_statements.flat_map(&:validate))
       errors
     end
 
     private
+
+    def validate_identifier_prefix
+      errors = []
+      expected_prefix = "#{identifier}/"
+      normative_statements.each do |statement|
+        unless statement.identifier.to_s.start_with?(expected_prefix)
+          errors << "Normative statement #{statement.identifier} does not share the expected prefix #{expected_prefix}"
+        end
+      end
+      errors
+    end
 
     def validate_class_children_mapping
       if normative_statements.empty?
