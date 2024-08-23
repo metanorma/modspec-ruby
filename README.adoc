@@ -530,7 +530,7 @@ These validation mechanisms help ensure that the created ModSpec instances are
 consistent, well-formed, and adhere to the expected structure and relationships.
 
 
-== Credits
+== Copyright
 
 This gem is developed, maintained and funded by
 https://www.ribose.com[Ribose Inc.]
