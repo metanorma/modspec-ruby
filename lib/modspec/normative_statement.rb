@@ -14,7 +14,7 @@ module Modspec
     attribute :subject, :string
     attribute :statement, :string
     attribute :condition, :string
-    attribute :guidance, :string
+    attribute :guidance, :string, collection: true
     attribute :inherit, Identifier, collection: true
     attribute :indirect_dependency, Identifier, collection: true
     attribute :implements, Identifier, collection: true

@@ -69,6 +69,9 @@ A human-readable name for the instance
 `description`::
 A description of the instance
 
+`guidance`::
+Guidance on how to implement the instance
+
 
 
 == Usage
@@ -81,9 +84,6 @@ A normative statements class has the following attributes in addition to the cor
 
 `subject`::
 The subject of the normative statements class
-
-`guidance`::
-Guidance on how to implement the class
 
 `dependencies`::
 URI(s) of normative statement classes that this class depends on
@@ -168,9 +168,6 @@ The text of the normative statement
 
 `condition`::
 Conditions that must be met for the statement to apply
-
-`guidance`::
-Guidance on how to implement the statement
 
 `inherit`::
 URI(s) of normative statement(s) that this statement inherits from
