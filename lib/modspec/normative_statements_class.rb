@@ -10,7 +10,7 @@ module Modspec
     attribute :name, :string
     attribute :description, :string
     attribute :subject, :string
-    attribute :guidance, :string
+    attribute :guidance, :string, collection: true
     attribute :dependencies, Identifier, collection: true
     attribute :normative_statements, NormativeStatement, collection: true
     attribute :belongs_to, Identifier, collection: true
