@@ -26,7 +26,7 @@ RSpec.describe Modspec::NormativeStatement do
       subject: "Basic_YPR.position",
       inherit: ["/req/global/sdu"],
       dependencies: ["/req/tangent-point"],
-      guidance: "Ensure the coordinate system is correctly specified."
+      guidance: ["Ensure the coordinate system is correctly specified."]
     )
   end
 
