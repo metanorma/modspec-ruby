@@ -48,10 +48,6 @@ RSpec.describe Modspec::NormativeStatement do
     suite
   end
 
-  before do
-    allow(Modspec::Suite).to receive(:instance).and_return(suite)
-  end
-
   it "has an identifier" do
     expect(normative_statement.identifier).to eq("/req/basic-ypr/position")
   end
@@ -70,7 +66,7 @@ RSpec.describe Modspec::NormativeStatement do
 
   describe "#validate_all" do
     it "returns no errors for a valid normative statement" do
-      errors = normative_statement.validate_all
+      errors = normative_statement.validate_all(suite)
       expect(errors).to be_empty
     end
 
