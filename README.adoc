@@ -517,7 +517,7 @@ To manually trigger validation on a suite:
 
 [source,ruby]
 ----
-errors = suite.validate
+errors = suite.validate_all
 if errors.any?
   puts "Validation errors:"
   errors.each { |error| puts "- #{error}" }

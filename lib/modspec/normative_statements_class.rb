@@ -31,11 +31,11 @@ module Modspec
       map_element "source", to: :source
     end
 
-    def validate
+    def validate_all
       errors = []
       errors.concat(validate_identifier_prefix)
       errors.concat(validate_class_children_mapping)
-      errors.concat(normative_statements.flat_map(&:validate))
+      errors.concat(normative_statements.flat_map(&:validate_all))
       errors
     end
 

@@ -31,11 +31,11 @@ module Modspec
       map_element "reference", to: :reference
     end
 
-    def validate
+    def validate_all
       errors = []
       errors.concat(validate_identifier_prefix)
       errors.concat(validate_class_children_mapping)
-      errors.concat(tests.flat_map(&:validate))
+      errors.concat(tests.flat_map(&:validate_all))
       errors
     end
 

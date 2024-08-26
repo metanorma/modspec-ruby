@@ -36,7 +36,7 @@ module Modspec
 
     attr_accessor :corresponding_requirements, :parent_class
 
-    def validate
+    def validate_all
       errors = []
       errors.concat(validate_requirement_mapping)
       errors.concat(validate_class_mapping)

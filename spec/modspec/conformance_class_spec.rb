@@ -135,9 +135,9 @@ RSpec.describe Modspec::ConformanceClass do
     expect(conformance_class.tests.length).to eq(2)
   end
 
-  describe "#validate" do
+  describe "#validate_all" do
     it "returns no errors for a valid conformance class" do
-      errors = suite.validate
+      errors = suite.validate_all
       if errors.any?
         puts "Validation errors:"
         errors.each { |error| puts "  #{error}" }
@@ -147,7 +147,7 @@ RSpec.describe Modspec::ConformanceClass do
 
     it "returns errors if there are no conformance tests" do
       conformance_class.tests = []
-      errors = conformance_class.validate
+      errors = conformance_class.validate_all
       expect(errors).not_to be_empty
     end
   end
