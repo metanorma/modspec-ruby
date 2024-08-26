@@ -46,19 +46,19 @@ module Modspec
       map_element "parts", to: :parts
     end
 
-    def validate_all
+    def validate_all(suite)
       errors = []
-      errors.concat(validate_dependencies)
+      errors.concat(validate_dependencies(suite))
       errors.concat(validate_nested_requirement)
       errors
     end
 
     private
 
-    def validate_dependencies
+    def validate_dependencies(suite)
       errors = []
       all_dependencies = (dependencies + indirect_dependency + implements).flatten.compact.map(&:to_s)
-      all_identifiers = Suite.instance.all_identifiers.map(&:to_s)
+      all_identifiers = suite.all_identifiers.map(&:to_s)
       all_dependencies.each do |dep|
         errors << "Requirement #{identifier} has an invalid dependency: #{dep}" unless all_identifiers.include?(dep)
       end

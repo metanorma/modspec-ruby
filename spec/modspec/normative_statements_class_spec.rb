@@ -27,6 +27,12 @@ RSpec.describe Modspec::NormativeStatementsClass do
     )
   end
 
+  let(:suite) do
+    suite = Modspec::Suite.new
+    suite.normative_statements_classes = [normative_statements_class]
+    suite
+  end
+
   it "has an identifier" do
     expect(normative_statements_class.identifier).to eq("/req/basic-ypr")
   end
@@ -42,13 +48,13 @@ RSpec.describe Modspec::NormativeStatementsClass do
 
   describe "#validate_all" do
     it "returns no errors for a valid normative statements class" do
-      errors = normative_statements_class.validate_all
+      errors = normative_statements_class.validate_all(suite)
       expect(errors).to be_empty
     end
 
     it "returns errors if there are no normative statements" do
       normative_statements_class.normative_statements = []
-      errors = normative_statements_class.validate_all
+      errors = normative_statements_class.validate_all(suite)
       expect(errors).not_to be_empty
     end
   end
