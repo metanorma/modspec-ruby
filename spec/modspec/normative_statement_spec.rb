@@ -68,9 +68,9 @@ RSpec.describe Modspec::NormativeStatement do
     expect(%w[requirement recommendation permission]).to include(normative_statement.obligation)
   end
 
-  describe "#validate" do
+  describe "#validate_all" do
     it "returns no errors for a valid normative statement" do
-      errors = normative_statement.validate
+      errors = normative_statement.validate_all
       expect(errors).to be_empty
     end
 
