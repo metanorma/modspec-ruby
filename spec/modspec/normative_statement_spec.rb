@@ -26,7 +26,7 @@ RSpec.describe Modspec::NormativeStatement do
       subject: "Basic_YPR.position",
       inherit: ["/req/global/sdu"],
       dependencies: ["/req/tangent-point"],
-      guidance: "Ensure the coordinate system is correctly specified."
+      guidance: ["Ensure the coordinate system is correctly specified."]
     )
   end
 
@@ -48,10 +48,6 @@ RSpec.describe Modspec::NormativeStatement do
     suite
   end
 
-  before do
-    allow(Modspec::Suite).to receive(:instance).and_return(suite)
-  end
-
   it "has an identifier" do
     expect(normative_statement.identifier).to eq("/req/basic-ypr/position")
   end
@@ -68,9 +64,9 @@ RSpec.describe Modspec::NormativeStatement do
     expect(%w[requirement recommendation permission]).to include(normative_statement.obligation)
   end
 
-  describe "#validate" do
+  describe "#validate_all" do
     it "returns no errors for a valid normative statement" do
-      errors = normative_statement.validate
+      errors = normative_statement.validate_all(suite)
       expect(errors).to be_empty
     end
 

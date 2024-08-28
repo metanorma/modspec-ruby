@@ -17,14 +17,15 @@ module Modspec
       map_element "conformance-classes", to: :conformance_classes
     end
 
-    def validate
+    def validate_all
       setup_relationships
+      self.all_identifiers = nil
       errors = []
       errors.concat(validate_cycles)
       errors.concat(validate_label_uniqueness)
       errors.concat(validate_dependencies)
-      errors.concat(normative_statements_classes.flat_map(&:validate))
-      errors.concat(conformance_classes.flat_map(&:validate))
+      errors.concat(normative_statements_classes.flat_map { |n| n.validate_all(self) })
+      errors.concat(conformance_classes.flat_map(&:validate_all))
       errors
     end
 
@@ -32,6 +33,7 @@ module Modspec
       raise ArgumentError, "Argument must be a Modspec::Suite" unless other_suite.is_a?(Modspec::Suite)
 
       combined_suite = dup
+      combined_suite.all_identifiers = nil
       combined_suite.normative_statements_classes += other_suite.normative_statements_classes
       combined_suite.conformance_classes += other_suite.conformance_classes
 
@@ -41,7 +43,7 @@ module Modspec
 
       combined_suite.name = "#{name} + #{other_suite.name}"
 
-      errors = combined_suite.validate
+      errors = combined_suite.validate_all
       if errors.any?
         puts "Warning: The combined suite has validation errors:"
         errors.each { |error| puts "  #{error}" }
@@ -50,16 +52,14 @@ module Modspec
       combined_suite
     end
 
-    def self.instance
-      @instance ||= new
-    end
-
     def all_identifiers
       @all_identifiers ||= (normative_statements_classes.flat_map(&:normative_statements) +
                             conformance_classes.flat_map(&:tests) +
                             normative_statements_classes +
                             conformance_classes).map(&:identifier)
     end
+
+    attr_writer :all_identifiers
 
     def resolve_conflicts(other_suite)
       resolve_conflicts_for(normative_statements_classes, other_suite.normative_statements_classes)
