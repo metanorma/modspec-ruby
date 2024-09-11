@@ -28,7 +28,7 @@ RSpec.describe Modspec::Suite do
     end
   end
 
-  describe "#validate_all" do
+  describe "#validate" do
     it "returns no errors for a valid combined suite" do
       base_suite = described_class.from_yaml(rc_yaml)
       combined_suite = base_suite
@@ -37,7 +37,7 @@ RSpec.describe Modspec::Suite do
                        .combine(time_suite)
                        .combine(frame_spec_suite)
 
-      errors = combined_suite.validate_all
+      errors = combined_suite.validate
       if errors.any?
         puts "Validation errors:"
         errors.each { |error| puts "  #{error}" }
@@ -67,7 +67,7 @@ RSpec.describe Modspec::Suite do
                        .combine(time_suite)
                        .combine(frame_spec_suite)
 
-      errors = combined_suite.validate_all
+      errors = combined_suite.validate
       if errors.any?
         puts "Validation errors:"
         errors.each { |error| puts "  #{error}" }
@@ -90,7 +90,7 @@ RSpec.describe Modspec::Suite do
       expect(combined_suite.conformance_classes).not_to be_empty
 
       # Validate the combined suite
-      errors = combined_suite.validate_all
+      errors = combined_suite.validate
 
       if errors.any?
         puts "Validation errors:"

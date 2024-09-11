@@ -64,14 +64,18 @@ RSpec.describe Modspec::NormativeStatement do
     expect(%w[requirement recommendation permission]).to include(normative_statement.obligation)
   end
 
-  describe "#validate_all" do
+  describe "#validate" do
     it "returns no errors for a valid normative statement" do
-      errors = normative_statement.validate_all(suite)
+      errors = normative_statement.validate
       expect(errors).to be_empty
     end
 
     it "returns errors for an invalid obligation" do
-      expect { normative_statement.obligation = "invalid" }.to raise_error(Lutaml::Model::InvalidValueError)
+      normative_statement.obligation = "invalid"
+      expect { normative_statement.validate! }.to raise_error(Lutaml::Model::ValidationError) do |error|
+        expect(error).to include(Lutaml::Model::InvalidValueError)
+        expect(error.error_messages).to include("obligation is `invalid`, must be one of the following [recommendation, permission, requirement]")
+      end
     end
   end
 end

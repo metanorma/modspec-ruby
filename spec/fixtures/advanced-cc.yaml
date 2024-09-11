@@ -50,4 +50,3 @@ conformance_classes:
     purpose: |
       To confirm the correct properties of a quaternion.
     method: Inspection
-

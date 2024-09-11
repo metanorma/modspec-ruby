@@ -60,13 +60,12 @@ RSpec.describe Modspec::ConformanceTest do
     expect(conformance_test.targets).to eq(["/req/basic-ypr/position"])
   end
 
-  describe "#validate_all" do
+  describe "#validate" do
     it "returns no errors for a valid conformance test" do
-      errors = conformance_test.validate_all
+      errors = conformance_test.validate
       expect(errors).to be_empty
     end
   end
-
   it "has a corresponding requirement" do
     expect(conformance_test.corresponding_requirements).to include(normative_statement)
   end
