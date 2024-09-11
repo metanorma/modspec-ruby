@@ -45,9 +45,7 @@ module Modspec
       errors = []
       expected_prefix = "#{identifier}/"
       normative_statements.each do |statement|
-        unless statement.identifier.to_s.start_with?(expected_prefix)
-          errors << "Normative statement #{statement.identifier} does not share the expected prefix #{expected_prefix}"
-        end
+        errors << "Normative statement #{statement.identifier} does not share the expected prefix #{expected_prefix}" unless statement.identifier.to_s.start_with?(expected_prefix)
       end
       errors
     end

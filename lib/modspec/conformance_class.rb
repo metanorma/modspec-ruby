@@ -53,9 +53,7 @@ module Modspec
       errors = []
       expected_prefix = "#{identifier}/"
       tests.each do |test|
-        unless test.identifier.to_s.start_with?(expected_prefix)
-          errors << "Conformance test #{test.identifier} does not share the expected prefix #{expected_prefix}"
-        end
+        errors << "Conformance test #{test.identifier} does not share the expected prefix #{expected_prefix}" unless test.identifier.to_s.start_with?(expected_prefix)
       end
       errors
     end
