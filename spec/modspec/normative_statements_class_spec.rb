@@ -46,15 +46,15 @@ RSpec.describe Modspec::NormativeStatementsClass do
     expect(normative_statements_class.normative_statements.length).to eq(2)
   end
 
-  describe "#validate_all" do
+  describe "#validate" do
     it "returns no errors for a valid normative statements class" do
-      errors = normative_statements_class.validate_all(suite)
+      errors = normative_statements_class.validate
       expect(errors).to be_empty
     end
 
     it "returns errors if there are no normative statements" do
       normative_statements_class.normative_statements = []
-      errors = normative_statements_class.validate_all(suite)
+      errors = normative_statements_class.validate
       expect(errors).not_to be_empty
     end
   end

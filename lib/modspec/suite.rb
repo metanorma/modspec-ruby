@@ -17,15 +17,15 @@ module Modspec
       map_element "conformance-classes", to: :conformance_classes
     end
 
-    def validate_all
+    def validate
       setup_relationships
       self.all_identifiers = nil
-      errors = []
+      errors = super()
       errors.concat(validate_cycles)
       errors.concat(validate_label_uniqueness)
       errors.concat(validate_dependencies)
-      errors.concat(normative_statements_classes.flat_map { |n| n.validate_all(self) })
-      errors.concat(conformance_classes.flat_map(&:validate_all))
+      errors.concat(normative_statements_classes.flat_map { |n| n.validate(self) })
+      errors.concat(conformance_classes.flat_map(&:validate))
       errors
     end
 
@@ -42,12 +42,6 @@ module Modspec
       combined_suite.conformance_classes.uniq!(&:identifier)
 
       combined_suite.name = "#{name} + #{other_suite.name}"
-
-      errors = combined_suite.validate_all
-      if errors.any?
-        puts "Warning: The combined suite has validation errors:"
-        errors.each { |error| puts "  #{error}" }
-      end
 
       combined_suite
     end

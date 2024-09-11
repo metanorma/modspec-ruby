@@ -46,9 +46,9 @@ module Modspec
       map_element "parts", to: :parts
     end
 
-    def validate_all(suite)
-      errors = []
-      errors.concat(validate_dependencies(suite))
+    def validate(suite = nil)
+      errors = super()
+      errors.concat(validate_dependencies(suite)) if suite
       errors.concat(validate_nested_requirement)
       errors
     end

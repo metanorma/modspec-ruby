@@ -4,6 +4,7 @@ normative_statements_classes:
   identifier: /req/time
   description: |
     Requirements on GeoPose time-related objects.
+
   normative_statements:
 
   - name: Implementation of GeoPose_Instant
