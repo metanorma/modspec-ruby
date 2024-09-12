@@ -42,7 +42,7 @@ module Modspec
     private
 
     def validate_class_children_mapping
-      if tests.empty?
+      if !tests.nil? && tests.empty?
         ["Conformance class #{identifier} has no child conformance tests"]
       else
         []
@@ -52,7 +52,7 @@ module Modspec
     def validate_identifier_prefix
       errors = []
       expected_prefix = "#{identifier}/"
-      tests.each do |test|
+      tests&.each do |test|
         errors << "Conformance test #{test.identifier} does not share the expected prefix #{expected_prefix}" unless test.identifier.to_s.start_with?(expected_prefix)
       end
       errors
