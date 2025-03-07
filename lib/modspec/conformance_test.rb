@@ -46,7 +46,7 @@ module Modspec
     private
 
     def validate_requirement_mapping
-      if corresponding_requirements.empty?
+      if corresponding_requirements.nil? || corresponding_requirements.empty?
         ["Conformance test #{identifier} has no corresponding requirements"]
       else
         []
@@ -54,7 +54,7 @@ module Modspec
     end
 
     def validate_class_mapping
-      if parent_class.nil? || !parent_class.tests.include?(self)
+      if parent_class.nil? || parent_class.tests.nil? || !parent_class.tests.include?(self)
         ["Conformance test #{identifier} does not belong to its parent class"]
       else
         []

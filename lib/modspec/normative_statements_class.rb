@@ -42,16 +42,16 @@ module Modspec
     private
 
     def validate_identifier_prefix
-      errors = []
+      return [] if normative_statements.nil? || normative_statements.empty?
+
       expected_prefix = "#{identifier}/"
-      normative_statements.each do |statement|
+      normative_statements.each_with_object([]) do |statement, errors|
         errors << "Normative statement #{statement.identifier} does not share the expected prefix #{expected_prefix}" unless statement.identifier.to_s.start_with?(expected_prefix)
       end
-      errors
     end
 
     def validate_class_children_mapping
-      if normative_statements.empty?
+      if normative_statements.nil? || normative_statements.empty?
         ["Requirement class #{identifier} has no child requirements"]
       else
         []
