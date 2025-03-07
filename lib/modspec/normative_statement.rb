@@ -55,9 +55,16 @@ module Modspec
 
     private
 
+    def all_dependencies
+      (
+        (dependencies || []) +
+        (indirect_dependency || []) +
+        (implements || [])
+      ).flatten.compact
+    end
+
     def validate_dependencies(suite)
       errors = []
-      all_dependencies = (dependencies + indirect_dependency + implements).flatten.compact.map(&:to_s)
       all_identifiers = suite.all_identifiers.map(&:to_s)
       all_dependencies.each do |dep|
         errors << "Requirement #{identifier} has an invalid dependency: #{dep}" unless all_identifiers.include?(dep)

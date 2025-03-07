@@ -20,12 +20,12 @@ module Modspec
     def validate
       setup_relationships
       self.all_identifiers = nil
-      errors = super()
+      errors = super
       errors.concat(validate_cycles)
       errors.concat(validate_label_uniqueness)
       errors.concat(validate_dependencies)
-      errors.concat(normative_statements_classes.flat_map { |n| n.validate(self) })
-      errors.concat(conformance_classes.flat_map(&:validate))
+      errors.concat(normative_statements_classes.flat_map { |n| n.validate(self) }) unless normative_statements_classes.nil?
+      errors.concat(conformance_classes.flat_map(&:validate)) unless conformance_classes.nil?
       errors
     end
 
@@ -34,12 +34,20 @@ module Modspec
 
       combined_suite = dup
       combined_suite.all_identifiers = nil
-      combined_suite.normative_statements_classes += other_suite.normative_statements_classes
-      combined_suite.conformance_classes += other_suite.conformance_classes
+      if other_suite.normative_statements_classes
+        combined_suite.normative_statements_classes ||= []
+        combined_suite.normative_statements_classes += other_suite.normative_statements_classes
+      end
+
+      if other_suite.conformance_classes
+        combined_suite.conformance_classes ||= []
+        combined_suite.conformance_classes += other_suite.conformance_classes
+      end
 
       # Ensure uniqueness of identifiers
-      combined_suite.normative_statements_classes.uniq!(&:identifier)
-      combined_suite.conformance_classes.uniq!(&:identifier)
+      combined_suite.normative_statements_classes.uniq!(&:identifier) if combined_suite.normative_statements_classes
+
+      combined_suite.conformance_classes.uniq!(&:identifier) if combined_suite.conformance_classes
 
       combined_suite.name = "#{name} + #{other_suite.name}"
 
@@ -47,10 +55,15 @@ module Modspec
     end
 
     def all_identifiers
-      @all_identifiers ||= (normative_statements_classes.flat_map(&:normative_statements) +
-                            conformance_classes.flat_map(&:tests) +
-                            normative_statements_classes +
-                            conformance_classes).map(&:identifier)
+      return @all_identifiers if @all_identifiers
+
+      nsc = normative_statements_classes || []
+      cc = conformance_classes || []
+
+      @all_identifiers = (nsc.flat_map(&:normative_statements) +
+              cc.flat_map(&:tests) +
+              nsc +
+              cc).map(&:identifier)
     end
 
     attr_writer :all_identifiers
@@ -71,7 +84,13 @@ module Modspec
     end
 
     def setup_relationships
-      all_requirements = normative_statements_classes.flat_map(&:normative_statements)
+      all_requirements = if normative_statements_classes
+                           normative_statements_classes.flat_map(&:normative_statements)
+                         else
+                           []
+                         end
+
+      return unless conformance_classes
 
       conformance_classes.each do |cc|
         cc.tests.each do |ct|
@@ -86,6 +105,8 @@ module Modspec
     private
 
     def resolve_conflicts_for(self_collection, other_collection)
+      return if self_collection.nil? || other_collection.nil?
+
       other_collection.each do |other_item|
         existing_item = self_collection.find { |item| item.identifier == other_item.identifier }
         if existing_item
@@ -115,18 +136,36 @@ module Modspec
       cycles.map { |cycle| "Cycle detected: #{cycle.join(" -> ")}" }
     end
 
+    # Combine all statements into a single array
+    # This includes both normative statements and conformance tests
+    def all_statements
+      nsc = if normative_statements_classes
+              normative_statements_classes.flat_map(&:normative_statements)
+            else
+              []
+            end
+      cc = if conformance_classes
+             conformance_classes.flat_map(&:tests)
+           else
+             []
+           end
+
+      nsc + cc
+    end
+
     def build_dependency_graph
       graph = {}
-      all_statements = normative_statements_classes.flat_map(&:normative_statements) +
-                       conformance_classes.flat_map(&:tests)
 
       all_statements.each do |statement|
         id = statement.identifier.to_s
         graph[id] = Set.new
-        graph[id].merge(statement.dependencies.map(&:to_s)) if statement.respond_to?(:dependencies)
-        graph[id].merge(statement.indirect_dependency.map(&:to_s)) if statement.respond_to?(:indirect_dependency)
-        graph[id].merge(statement.implements.map(&:to_s)) if statement.respond_to?(:implements)
-        graph[id].merge(statement.targets.map(&:to_s)) if statement.respond_to?(:targets)
+
+        # Define all dependency-like properties to check
+        dependency_properties = %i[dependencies indirect_dependency implements targets]
+
+        dependency_properties.each do |property|
+          graph[id].merge(statement.send(property).map(&:to_s)) if statement.respond_to?(property) && !statement.send(property).nil?
+        end
       end
 
       graph
@@ -175,8 +214,6 @@ module Modspec
     def validate_label_uniqueness
       labels = {}
       errors = []
-      all_statements = normative_statements_classes.flat_map(&:normative_statements) +
-                       conformance_classes.flat_map(&:tests)
       all_statements.each do |statement|
         if labels[statement.identifier]
           errors << "Duplicate identifier found: #{statement.identifier}"
@@ -191,17 +228,21 @@ module Modspec
       all_identifiers = collect_all_identifiers
 
       errors = []
-      normative_statements_classes.each do |nsc|
-        errors.concat(validate_class_dependencies(nsc, all_identifiers))
-        nsc.normative_statements.each do |ns|
-          errors.concat(validate_statement_dependencies(ns, all_identifiers))
+      if normative_statements_classes
+        normative_statements_classes.each do |nsc|
+          errors.concat(validate_class_dependencies(nsc, all_identifiers))
+          nsc.normative_statements.each do |ns|
+            errors.concat(validate_statement_dependencies(ns, all_identifiers))
+          end
         end
       end
 
-      conformance_classes.each do |cc|
-        errors.concat(validate_class_dependencies(cc, all_identifiers))
-        cc.tests.each do |ct|
-          errors.concat(validate_test_targets(ct, all_identifiers))
+      if conformance_classes
+        conformance_classes.each do |cc|
+          errors.concat(validate_class_dependencies(cc, all_identifiers))
+          cc.tests.each do |ct|
+            errors.concat(validate_test_targets(ct, all_identifiers))
+          end
         end
       end
 
@@ -211,17 +252,21 @@ module Modspec
     def collect_all_identifiers
       identifiers = {}
 
-      normative_statements_classes.each do |nsc|
-        identifiers[nsc.identifier.to_s] = nsc
-        nsc.normative_statements.each do |ns|
-          identifiers[ns.identifier.to_s] = ns
+      if normative_statements_classes
+        normative_statements_classes.each do |nsc|
+          identifiers[nsc.identifier.to_s] = nsc
+          nsc.normative_statements.each do |ns|
+            identifiers[ns.identifier.to_s] = ns
+          end
         end
       end
 
-      conformance_classes.each do |cc|
-        identifiers[cc.identifier.to_s] = cc
-        cc.tests.each do |ct|
-          identifiers[ct.identifier.to_s] = ct
+      if conformance_classes
+        conformance_classes.each do |cc|
+          identifiers[cc.identifier.to_s] = cc
+          cc.tests.each do |ct|
+            identifiers[ct.identifier.to_s] = ct
+          end
         end
       end
 
