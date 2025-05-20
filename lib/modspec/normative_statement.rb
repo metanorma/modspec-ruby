@@ -46,7 +46,7 @@ module Modspec
       map_element "parts", to: :parts
     end
 
-    def validate(suite = nil)
+    def validate(suite = nil, register: Lutaml::Model::Config.default_register)
       errors = super()
       errors.concat(validate_dependencies(suite)) if suite
       errors.concat(validate_nested_requirement)
