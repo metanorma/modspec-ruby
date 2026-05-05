@@ -29,7 +29,7 @@ module Modspec
               default: -> { "requirement" }
 
     xml do
-      root "normative-statement"
+      element "normative-statement"
       map_attribute "identifier", to: :identifier
       map_element "name", to: :name
       map_element "subject", to: :subject

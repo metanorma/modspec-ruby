@@ -2,11 +2,12 @@
 
 source "https://rubygems.org"
 
-# Specify your gem's dependencies in modspec.gemspec
 gemspec
 
-gem "equivalent-xml"
-gem "pry"
+gem "canon"
 gem "rake"
 gem "rspec"
 gem "rubocop"
+gem "rubocop-performance"
+gem "rubocop-rake"
+gem "rubocop-rspec"

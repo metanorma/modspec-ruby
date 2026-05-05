@@ -13,13 +13,13 @@ module Modspec
     attribute :description, :string
     attribute :guidance, :string, collection: true
     attribute :purpose, :string
-    attribute :method, :string # Inspection, etc.
+    attribute :test_method, :string
     attribute :type, :string
     attribute :reference, :string
     attribute :abstract, :boolean
 
     xml do
-      root "conformance-test"
+      element "conformance-test"
       map_attribute "identifier", to: :identifier
       map_attribute "abstract", to: :abstract
       map_element "name", to: :name
@@ -29,15 +29,30 @@ module Modspec
       map_element "description", to: :description
       map_element "guidance", to: :guidance
       map_element "purpose", to: :purpose
-      map_element "method", to: :method
+      map_element "method", to: :test_method
       map_element "type", to: :type
       map_element "reference", to: :reference
+    end
+
+    key_value do
+      map "identifier", to: :identifier
+      map "name", to: :name
+      map "dependencies", to: :dependencies
+      map "targets", to: :targets
+      map "belongs_to", to: :belongs_to
+      map "description", to: :description
+      map "guidance", to: :guidance
+      map "purpose", to: :purpose
+      map "method", to: :test_method
+      map "type", to: :type
+      map "reference", to: :reference
+      map "abstract", to: :abstract
     end
 
     attr_accessor :corresponding_requirements, :parent_class
 
     def validate
-      errors = super()
+      errors = super
       errors.concat(validate_requirement_mapping)
       errors.concat(validate_class_mapping)
       errors
