@@ -6,14 +6,16 @@ module Modspec
   class Suite < Lutaml::Model::Serializable
     attribute :identifier, Identifier
     attribute :name, :string
-    attribute :normative_statements_classes, NormativeStatementsClass, collection: true
+    attribute :normative_statements_classes, NormativeStatementsClass,
+              collection: true
     attribute :conformance_classes, ConformanceClass, collection: true
 
     xml do
-      root "suite"
+      element "suite"
       map_attribute "identifier", to: :identifier
       map_element "name", to: :name
-      map_element "normative-statements-classes", to: :normative_statements_classes
+      map_element "normative-statements-classes",
+                  to: :normative_statements_classes
       map_element "conformance-classes", to: :conformance_classes
     end
 
@@ -24,13 +26,20 @@ module Modspec
       errors.concat(validate_cycles)
       errors.concat(validate_label_uniqueness)
       errors.concat(validate_dependencies)
-      errors.concat(normative_statements_classes.flat_map { |n| n.validate(self) }) unless normative_statements_classes.nil?
+      unless normative_statements_classes.nil?
+        errors.concat(normative_statements_classes.flat_map do |n|
+          n.validate(self)
+        end)
+      end
       errors.concat(conformance_classes.flat_map(&:validate)) unless conformance_classes.nil?
       errors
     end
 
     def combine(other_suite)
-      raise ArgumentError, "Argument must be a Modspec::Suite" unless other_suite.is_a?(Modspec::Suite)
+      unless other_suite.is_a?(Modspec::Suite)
+        raise ArgumentError,
+              "Argument must be a Modspec::Suite"
+      end
 
       combined_suite = dup
       combined_suite.all_identifiers = nil
@@ -45,9 +54,9 @@ module Modspec
       end
 
       # Ensure uniqueness of identifiers
-      combined_suite.normative_statements_classes.uniq!(&:identifier) if combined_suite.normative_statements_classes
+      combined_suite.normative_statements_classes&.uniq!(&:identifier)
 
-      combined_suite.conformance_classes.uniq!(&:identifier) if combined_suite.conformance_classes
+      combined_suite.conformance_classes&.uniq!(&:identifier)
 
       combined_suite.name = "#{name} + #{other_suite.name}"
 
@@ -69,8 +78,10 @@ module Modspec
     attr_writer :all_identifiers
 
     def resolve_conflicts(other_suite)
-      resolve_conflicts_for(normative_statements_classes, other_suite.normative_statements_classes)
-      resolve_conflicts_for(conformance_classes, other_suite.conformance_classes)
+      resolve_conflicts_for(normative_statements_classes,
+                            other_suite.normative_statements_classes)
+      resolve_conflicts_for(conformance_classes,
+                            other_suite.conformance_classes)
     end
 
     def self.from_yaml_files(*files)
@@ -95,7 +106,7 @@ module Modspec
       conformance_classes.each do |cc|
         cc.tests.each do |ct|
           ct.corresponding_requirements = all_requirements.select do |r|
-            ct.targets.map(&:to_s).include?(r.identifier.to_s)
+            Array(ct.targets).map(&:to_s).include?(r.identifier.to_s)
           end
           ct.parent_class = cc
         end
@@ -108,7 +119,9 @@ module Modspec
       return if self_collection.nil? || other_collection.nil?
 
       other_collection.each do |other_item|
-        existing_item = self_collection.find { |item| item.identifier == other_item.identifier }
+        existing_item = self_collection.find do |item|
+          item.identifier == other_item.identifier
+        end
         if existing_item
           # Merge attributes of conflicting items
           merge_attributes(existing_item, other_item)
@@ -133,7 +146,7 @@ module Modspec
     def validate_cycles
       graph = build_dependency_graph
       cycles = detect_cycles(graph)
-      cycles.map { |cycle| "Cycle detected: #{cycle.join(" -> ")}" }
+      cycles.map { |cycle| "Cycle detected: #{cycle.join(' -> ')}" }
     end
 
     # Combine all statements into a single array
@@ -161,7 +174,8 @@ module Modspec
         graph[id] = Set.new
 
         # Define all dependency-like properties to check
-        dependency_properties = %i[dependencies indirect_dependency implements targets]
+        dependency_properties = %i[dependencies indirect_dependency implements
+                                   targets]
 
         dependency_properties.each do |property|
           graph[id].merge(statement.send(property).map(&:to_s)) if statement.respond_to?(property) && !statement.send(property).nil?
@@ -195,7 +209,8 @@ module Modspec
       if graph[node]
         graph[node].each do |neighbor|
           if !visited.include?(neighbor)
-            cycle = detect_cycle_util(neighbor, graph, visited, recursion_stack, path)
+            cycle = detect_cycle_util(neighbor, graph, visited,
+                                      recursion_stack, path)
             return cycle if cycle
           elsif recursion_stack.include?(neighbor)
             return path[path.index(neighbor)..] + [neighbor]
@@ -228,21 +243,17 @@ module Modspec
       all_identifiers = collect_all_identifiers
 
       errors = []
-      if normative_statements_classes
-        normative_statements_classes.each do |nsc|
-          errors.concat(validate_class_dependencies(nsc, all_identifiers))
-          nsc.normative_statements.each do |ns|
-            errors.concat(validate_statement_dependencies(ns, all_identifiers))
-          end
+      normative_statements_classes&.each do |nsc|
+        errors.concat(validate_class_dependencies(nsc, all_identifiers))
+        nsc.normative_statements.each do |ns|
+          errors.concat(validate_statement_dependencies(ns, all_identifiers))
         end
       end
 
-      if conformance_classes
-        conformance_classes.each do |cc|
-          errors.concat(validate_class_dependencies(cc, all_identifiers))
-          cc.tests.each do |ct|
-            errors.concat(validate_test_targets(ct, all_identifiers))
-          end
+      conformance_classes&.each do |cc|
+        errors.concat(validate_class_dependencies(cc, all_identifiers))
+        cc.tests.each do |ct|
+          errors.concat(validate_test_targets(ct, all_identifiers))
         end
       end
 
@@ -252,21 +263,17 @@ module Modspec
     def collect_all_identifiers
       identifiers = {}
 
-      if normative_statements_classes
-        normative_statements_classes.each do |nsc|
-          identifiers[nsc.identifier.to_s] = nsc
-          nsc.normative_statements.each do |ns|
-            identifiers[ns.identifier.to_s] = ns
-          end
+      normative_statements_classes&.each do |nsc|
+        identifiers[nsc.identifier.to_s] = nsc
+        nsc.normative_statements.each do |ns|
+          identifiers[ns.identifier.to_s] = ns
         end
       end
 
-      if conformance_classes
-        conformance_classes.each do |cc|
-          identifiers[cc.identifier.to_s] = cc
-          cc.tests.each do |ct|
-            identifiers[ct.identifier.to_s] = ct
-          end
+      conformance_classes&.each do |cc|
+        identifiers[cc.identifier.to_s] = cc
+        cc.tests.each do |ct|
+          identifiers[ct.identifier.to_s] = ct
         end
       end
 

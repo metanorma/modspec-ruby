@@ -20,16 +20,17 @@ Gem::Specification.new do |spec|
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = spec.homepage
   spec.metadata["bug_tracker_uri"] = "#{spec.homepage}/issues"
+  spec.metadata["rubygems_mfa_required"] = "true"
 
   # Specify which files should be added to the gem when it is released.
   spec.files = all_files_in_git
-               .reject { |f| f.match(%r{\A(?:test|features|bin|\.)/}) }
+    .reject { |f| f.match(%r{\A(?:test|features|bin|\.)/}) }
 
   spec.bindir = "exe"
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "lutaml-model", "~>0.7"
+  spec.add_dependency "lutaml-model", "~> 0.8.0"
   spec.add_dependency "nokogiri"
   spec.add_dependency "toml-rb"
 end

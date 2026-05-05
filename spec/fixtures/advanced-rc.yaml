@@ -1,37 +1,34 @@
 ---
 normative_statements_classes:
 - name: Advanced logical model SDU
-  identifier: /req/advanced
+  identifier: "/req/advanced"
   description: |
     The Advanced Target has a more general structure than Basic-YPR and
     Basic-Quaternion, supporting flexible specification of Outer Frame and a
     Valid Time.
-
   dependencies:
-  - /req/global
-  - /req/frame-spec
-  - /req/time
+  - "/req/global"
+  - "/req/frame-spec"
+  - "/req/time"
   normative_statements:
-
   - name: Expression of valid time as GeoPose_Instant
-    identifier: /req/advanced/valid-time
+    identifier: "/req/advanced/valid-time"
     dependencies:
-    - /req/time/instant
-
+    - "/req/time/instant"
     statement: |
       The `Advanced.validTime` attribute shall be represented by a
       `GeoPose_Instant` object.
-
+    obligation: requirement
   - name: Expression of outer frame
-    identifier: /req/advanced/frame-spec
+    identifier: "/req/advanced/frame-spec"
     dependencies:
-    - /req/frame-spec
+    - "/req/frame-spec"
     statement: |
       The `Advanced.frameSpecification` attribute shall represent an explicit
       frame specification with the `ExplicitFrameSpec` object.
-
+    obligation: requirement
   - name: Expression of inner frame
-    identifier: /req/advanced/quaternion
+    identifier: "/req/advanced/quaternion"
     statement: |
       The `Advanced.quaternion` attribute shall contain a quaternion expressed
       using the UnitQuaternion datatype value expressed as four real numbers,
@@ -41,3 +38,4 @@ normative_statements_classes:
       SHALL be applied to an initial reference frame oriented East-North-Up
       (ENU) coordinate system where the coordinate axes East, North, and Up
       correspond to the axes X, Y, Z.
+    obligation: requirement

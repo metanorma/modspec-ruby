@@ -18,7 +18,7 @@ module Modspec
     attribute :reference, :string
 
     xml do
-      root "conformance-class"
+      element "conformance-class"
       map_attribute "identifier", to: :identifier
       map_element "name", to: :name
       map_element "dependencies", to: :dependencies
@@ -32,7 +32,7 @@ module Modspec
     end
 
     def validate
-      errors = super()
+      errors = super
       errors.concat(validate_identifier_prefix)
       errors.concat(validate_class_children_mapping)
       errors.concat(tests.flat_map(&:validate))
@@ -52,10 +52,8 @@ module Modspec
     def validate_identifier_prefix
       errors = []
       expected_prefix = "#{identifier}/"
-      if tests
-        tests.each do |test|
-          errors << "Conformance test #{test.identifier} does not share the expected prefix #{expected_prefix}" unless test.identifier.to_s.start_with?(expected_prefix)
-        end
+      tests&.each do |test|
+        errors << "Conformance test #{test.identifier} does not share the expected prefix #{expected_prefix}" unless test.identifier.to_s.start_with?(expected_prefix)
       end
       errors
     end
