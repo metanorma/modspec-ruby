@@ -21,15 +21,13 @@ module Modspec
 
     def validate
       setup_relationships
-      self.all_identifiers = nil
+      reset_statement_index
       errors = super
       errors.concat(validate_cycles)
       errors.concat(validate_label_uniqueness)
       errors.concat(validate_dependencies)
       unless normative_statements_classes.nil?
-        errors.concat(normative_statements_classes.flat_map do |n|
-          n.validate(self)
-        end)
+        errors.concat(normative_statements_classes.flat_map(&:validate))
       end
       errors.concat(conformance_classes.flat_map(&:validate)) unless conformance_classes.nil?
       errors
@@ -42,7 +40,7 @@ module Modspec
       end
 
       combined_suite = dup
-      combined_suite.all_identifiers = nil
+      combined_suite.reset_statement_index
       if other_suite.normative_statements_classes
         combined_suite.normative_statements_classes ||= []
         combined_suite.normative_statements_classes += other_suite.normative_statements_classes
@@ -63,19 +61,17 @@ module Modspec
       combined_suite
     end
 
-    def all_identifiers
-      return @all_identifiers if @all_identifiers
-
-      nsc = normative_statements_classes || []
-      cc = conformance_classes || []
-
-      @all_identifiers = (nsc.flat_map(&:normative_statements) +
-              cc.flat_map(&:tests) +
-              nsc +
-              cc).map(&:identifier)
+    def statement_index
+      @statement_index ||= build_statement_index
     end
 
-    attr_writer :all_identifiers
+    def reset_statement_index
+      @statement_index = nil
+    end
+
+    def all_identifiers
+      statement_index.keys
+    end
 
     def resolve_conflicts(other_suite)
       resolve_conflicts_for(normative_statements_classes,
@@ -131,13 +127,16 @@ module Modspec
     end
 
     def merge_attributes(existing_item, other_item)
-      existing_item.class.attribute_names.each do |attr|
+      existing_item.class.attributes.each_key do |attr|
         next if %i[identifier name].include?(attr)
 
-        if existing_item.send(attr).is_a?(Array)
-          existing_item.send(attr).concat(other_item.send(attr)).uniq!
-        elsif existing_item.send(attr).nil?
-          existing_item.send("#{attr}=", other_item.send(attr))
+        existing_val = existing_item.send(attr)
+        other_val = other_item.send(attr)
+
+        if existing_val.is_a?(Array)
+          existing_item.send(attr).concat(other_val).uniq!
+        elsif existing_val.nil? && !other_val.nil?
+          existing_item.send("#{attr}=", other_val)
         end
       end
     end
@@ -148,21 +147,20 @@ module Modspec
       cycles.map { |cycle| "Cycle detected: #{cycle.join(' -> ')}" }
     end
 
-    # Combine all statements into a single array
-    # This includes both normative statements and conformance tests
     def all_statements
-      nsc = if normative_statements_classes
-              normative_statements_classes.flat_map(&:normative_statements)
-            else
-              []
-            end
-      cc = if conformance_classes
-             conformance_classes.flat_map(&:tests)
-           else
-             []
-           end
+      statement_index.values
+    end
 
-      nsc + cc
+    def each_statement(&block)
+      normative_statements_classes&.each do |nsc|
+        yield nsc
+        nsc.normative_statements.each(&block)
+      end
+
+      conformance_classes&.each do |cc|
+        yield cc
+        cc.tests.each(&block)
+      end
     end
 
     def build_dependency_graph
@@ -219,20 +217,21 @@ module Modspec
     end
 
     def validate_label_uniqueness
-      labels = {}
+      seen = {}
       errors = []
-      all_statements.each do |statement|
-        if labels[statement.identifier]
+      each_statement do |statement|
+        id = statement.identifier.to_s
+        if seen[id]
           errors << "Duplicate identifier found: #{statement.identifier}"
         else
-          labels[statement.identifier] = true
+          seen[id] = true
         end
       end
       errors
     end
 
     def validate_dependencies
-      all_ids = collect_all_identifiers
+      all_ids = statement_index
 
       errors = []
       normative_statements_classes&.each do |nsc|
@@ -256,24 +255,10 @@ module Modspec
       errors
     end
 
-    def collect_all_identifiers
-      identifiers = {}
-
-      normative_statements_classes&.each do |nsc|
-        identifiers[nsc.identifier.to_s] = nsc
-        nsc.normative_statements.each do |ns|
-          identifiers[ns.identifier.to_s] = ns
-        end
-      end
-
-      conformance_classes&.each do |cc|
-        identifiers[cc.identifier.to_s] = cc
-        cc.tests.each do |ct|
-          identifiers[ct.identifier.to_s] = ct
-        end
-      end
-
-      identifiers
+    def build_statement_index
+      index = {}
+      each_statement { |s| index[s.identifier.to_s] = s }
+      index
     end
 
     def validate_refs(obj, all_ids, property)
