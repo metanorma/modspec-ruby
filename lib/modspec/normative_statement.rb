@@ -45,8 +45,8 @@ module Modspec
       map_element "parts", to: :parts
     end
 
-    def validate(_suite = nil, register: Lutaml::Model::Config.default_register)
-      super(register: register)
+    def validate(register: Lutaml::Model::Config.default_register)
+      super
     end
   end
 end
