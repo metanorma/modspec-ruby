@@ -11,12 +11,12 @@ RSpec.describe Modspec::ConformanceClass do
         Modspec::NormativeStatement.new(
           identifier: "/req/basic-ypr/position",
           name: "Expression of outer frame",
-          statement: "The `Basic_YPR.position` attribute shall represent the outer frame, specified by an implicit WGS-84 CRS and an implicit EPSG 4461-CS (LTP-ENU) coordinate system and explicit parameters to define the tangent point.",
+          statement: "The `Basic_YPR.position` attribute shall represent the outer frame.",
         ),
         Modspec::NormativeStatement.new(
           identifier: "/req/basic-ypr/angles",
           name: "Expression of inner frame",
-          statement: "The `Basic_YPR.angles` attribute shall represent the inner frame, which is a rotation-only transformation with Yaw, Pitch, and Roll (YPR) angles.",
+          statement: "The `Basic_YPR.angles` attribute shall represent the inner frame.",
         ),
       ],
     )
@@ -35,7 +35,7 @@ RSpec.describe Modspec::ConformanceClass do
           identifier: "/conf/basic-ypr/position",
           name: "Verify expression of outer frame",
           targets: ["/req/basic-ypr/position"],
-          description: "To confirm that an implementation of a Basic-YPR consists of an Outer Frame specified by an implicit WGS-84 CRS and an implicit EPSG 4461-CS (LTP-ENU) coordinate system and explicit parameters to define the tangent point.",
+          description: "To confirm outer frame.",
           purpose: "Verify that this requirement is satisfied.",
           test_method: "Inspection",
         ),
@@ -43,7 +43,7 @@ RSpec.describe Modspec::ConformanceClass do
           identifier: "/conf/basic-ypr/angles",
           name: "Verify expression of inner frame",
           targets: ["/req/basic-ypr/angles"],
-          description: "To confirm that the Inner Frame is expressed as a rotation-only transformation using Yaw, Pitch, and Roll angles.",
+          description: "To confirm inner frame.",
           purpose: "Verify that this requirement is satisfied.",
           test_method: "Inspection",
         ),
@@ -88,7 +88,7 @@ RSpec.describe Modspec::ConformanceClass do
           identifier: "/conf/global/sdu",
           name: "Verify SDU conformance",
           targets: ["/req/global/sdu"],
-          description: "To confirm that an implementation of an SDU conforms to the logical model.",
+          description: "To confirm SDU conformance.",
           purpose: "Verify that this requirement is satisfied.",
           test_method: "Inspection",
         ),
@@ -105,11 +105,10 @@ RSpec.describe Modspec::ConformanceClass do
           identifier: "/conf/tangent-point/height",
           name: "Verify tangent point height",
           targets: ["/req/tangent-point/height"],
-          description: "To confirm that an implementation of a Tangent Point specifies the height of the Tangent Point.",
+          description: "To confirm tangent point height.",
           purpose: "Verify that this requirement is satisfied.",
           test_method: "Inspection",
         ),
-
       ],
     )
   end
@@ -140,17 +139,25 @@ RSpec.describe Modspec::ConformanceClass do
   describe "#validate" do
     it "returns no errors for a valid conformance class" do
       errors = suite.validate
-      if errors.any?
-
-        errors.each { |error| }
-      end
       expect(errors).to be_empty
     end
 
     it "returns errors if there are no conformance tests" do
       conformance_class.tests = []
       errors = conformance_class.validate
-      expect(errors).not_to be_empty
+      expect(errors).to include(a_string_matching(/no child conformance tests/))
+    end
+
+    it "returns errors if test identifier does not share prefix" do
+      conformance_class.tests = [
+        Modspec::ConformanceTest.new(
+          identifier: "/conf/other/test",
+          name: "Mismatched test",
+          targets: ["/req/basic-ypr/position"],
+        ),
+      ]
+      errors = conformance_class.validate
+      expect(errors).to include(a_string_matching(/does not share the expected prefix/))
     end
   end
 end

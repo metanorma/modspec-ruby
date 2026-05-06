@@ -95,18 +95,17 @@ module Modspec
     end
 
     def setup_relationships
-      all_requirements = if normative_statements_classes
-                           normative_statements_classes.flat_map(&:normative_statements)
-                         else
-                           []
-                         end
+      return unless normative_statements_classes && conformance_classes
 
-      return unless conformance_classes
+      req_index = normative_statements_classes
+        .flat_map(&:normative_statements)
+        .to_h { |r| [r.identifier.to_s, r] }
 
       conformance_classes.each do |cc|
         cc.tests.each do |ct|
-          ct.corresponding_requirements = all_requirements.select do |r|
-            Array(ct.targets).map(&:to_s).include?(r.identifier.to_s)
+          targets = Array(ct.targets).map(&:to_s)
+          ct.corresponding_requirements = targets.filter_map do |t|
+            req_index[t]
           end
           ct.parent_class = cc
         end
@@ -171,15 +170,14 @@ module Modspec
 
       all_statements.each do |statement|
         id = statement.identifier.to_s
-        graph[id] = Set.new
+        deps = Set.new
 
-        # Define all dependency-like properties to check
-        dependency_properties = %i[dependencies indirect_dependency implements
-                                   targets]
-
-        dependency_properties.each do |property|
-          graph[id].merge(statement.send(property).map(&:to_s)) if statement.respond_to?(property) && !statement.send(property).nil?
+        %i[dependencies indirect_dependency implements targets].each do |prop|
+          refs = statement.send(prop) if statement.respond_to?(prop)
+          deps.merge(refs.map(&:to_s)) if refs
         end
+
+        graph[id] = deps
       end
 
       graph
@@ -205,20 +203,14 @@ module Modspec
       recursion_stack.add(node)
       path.push(node)
 
-      # Check if the node exists in the graph and has dependencies
-      if graph[node]
-        graph[node].each do |neighbor|
-          if !visited.include?(neighbor)
-            cycle = detect_cycle_util(neighbor, graph, visited,
-                                      recursion_stack, path)
-            return cycle if cycle
-          elsif recursion_stack.include?(neighbor)
-            return path[path.index(neighbor)..] + [neighbor]
-          end
+      graph[node]&.each do |neighbor|
+        if !visited.include?(neighbor)
+          cycle = detect_cycle_util(neighbor, graph, visited,
+                                    recursion_stack, path)
+          return cycle if cycle
+        elsif recursion_stack.include?(neighbor)
+          return path[path.index(neighbor)..] + [neighbor]
         end
-      else
-        # If the node doesn't exist in the graph, log a warning
-        puts "Warning: Node #{node} referenced but not found in the graph"
       end
 
       path.pop
@@ -240,20 +232,24 @@ module Modspec
     end
 
     def validate_dependencies
-      all_identifiers = collect_all_identifiers
+      all_ids = collect_all_identifiers
 
       errors = []
       normative_statements_classes&.each do |nsc|
-        errors.concat(validate_class_dependencies(nsc, all_identifiers))
+        errors.concat(validate_refs(nsc, all_ids, :dependencies))
+        errors.concat(validate_refs(nsc, all_ids, :implements))
         nsc.normative_statements.each do |ns|
-          errors.concat(validate_statement_dependencies(ns, all_identifiers))
+          errors.concat(validate_refs(ns, all_ids, :dependencies))
+          errors.concat(validate_refs(ns, all_ids, :indirect_dependency))
+          errors.concat(validate_refs(ns, all_ids, :implements))
         end
       end
 
       conformance_classes&.each do |cc|
-        errors.concat(validate_class_dependencies(cc, all_identifiers))
+        errors.concat(validate_refs(cc, all_ids, :dependencies))
         cc.tests.each do |ct|
-          errors.concat(validate_test_targets(ct, all_identifiers))
+          errors.concat(validate_refs(ct, all_ids, :dependencies))
+          errors.concat(validate_refs(ct, all_ids, :targets))
         end
       end
 
@@ -280,28 +276,16 @@ module Modspec
       identifiers
     end
 
-    def validate_class_dependencies(klass, all_identifiers)
-      errors = []
-      klass.dependencies&.each do |dep|
-        errors << "Invalid dependency #{dep} in #{klass.identifier}" unless all_identifiers.key?(dep.to_s)
-      end
-      errors
-    end
+    def validate_refs(obj, all_ids, property)
+      refs = obj.send(property)
+      return [] unless refs
 
-    def validate_statement_dependencies(statement, all_identifiers)
-      errors = []
-      statement.dependencies&.each do |dep|
-        errors << "Invalid dependency #{dep} in #{statement.identifier}" unless all_identifiers.key?(dep.to_s)
+      refs.filter_map do |ref|
+        unless all_ids.key?(ref.to_s)
+          "Invalid #{property.to_s.tr('_',
+                                      ' ')} #{ref} in #{obj.identifier}"
+        end
       end
-      errors
-    end
-
-    def validate_test_targets(test, all_identifiers)
-      errors = []
-      test.targets&.each do |target|
-        errors << "Invalid target #{target} in #{test.identifier}" unless all_identifiers.key?(target.to_s)
-      end
-      errors
     end
   end
 end

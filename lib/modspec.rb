@@ -5,14 +5,11 @@ require "lutaml/model"
 require "set"
 
 module Modspec
-  class Error < StandardError; end
-
-  # Your code goes here...
+  autoload :Identifier, "modspec/identifier"
+  autoload :NormativeStatement, "modspec/normative_statement"
+  autoload :NormativeStatementPart, "modspec/normative_statement"
+  autoload :NormativeStatementsClass, "modspec/normative_statements_class"
+  autoload :ConformanceTest, "modspec/conformance_test"
+  autoload :ConformanceClass, "modspec/conformance_class"
+  autoload :Suite, "modspec/suite"
 end
-
-require_relative "modspec/identifier"
-require_relative "modspec/normative_statement"
-require_relative "modspec/normative_statements_class"
-require_relative "modspec/conformance_test"
-require_relative "modspec/conformance_class"
-require_relative "modspec/suite"

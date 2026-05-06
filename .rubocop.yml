@@ -17,3 +17,6 @@ plugins:
 
 AllCops:
   TargetRubyVersion: 3.0
+
+RSpec/ExampleLength:
+  Max: 30
