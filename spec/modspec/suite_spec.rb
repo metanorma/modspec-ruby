@@ -63,6 +63,36 @@ RSpec.describe Modspec::Suite do
       expect(errors).to include(a_string_matching(/Duplicate identifier/))
     end
 
+    it "detects cross-type identifier collisions" do
+      suite = described_class.new(
+        identifier: "/suite",
+        name: "Test",
+        normative_statements_classes: [
+          Modspec::NormativeStatementsClass.new(
+            identifier: "/req/test",
+            normative_statements: [
+              Modspec::NormativeStatement.new(identifier: "/req/test/a",
+                                              name: "A", statement: "a"),
+            ],
+          ),
+        ],
+        conformance_classes: [
+          Modspec::ConformanceClass.new(
+            identifier: "/conf/test",
+            tests: [
+              Modspec::ConformanceTest.new(
+                identifier: "/req/test/a",
+                name: "CT collision",
+              ),
+            ],
+          ),
+        ],
+      )
+
+      errors = suite.validate
+      expect(errors).to include(a_string_matching(/Duplicate identifier.*\/req\/test\/a/))
+    end
+
     it "detects dependency cycles" do
       ns_a = Modspec::NormativeStatement.new(
         identifier: "/req/test/a", name: "A", statement: "a",
@@ -265,6 +295,204 @@ RSpec.describe Modspec::Suite do
       expect(errors).not_to include(a_string_matching(/Cycle detected/))
       expect(errors).not_to include(a_string_matching(/has an invalid dependency/))
       expect(errors).to be_empty
+    end
+  end
+
+  describe "#setup_relationships" do
+    it "links conformance tests to their target normative statements" do
+      suite = described_class.new(
+        identifier: "/suite",
+        name: "Test",
+        normative_statements_classes: [
+          Modspec::NormativeStatementsClass.new(
+            identifier: "/req/test",
+            normative_statements: [
+              Modspec::NormativeStatement.new(identifier: "/req/test/a",
+                                              name: "A", statement: "a"),
+            ],
+          ),
+        ],
+        conformance_classes: [
+          Modspec::ConformanceClass.new(
+            identifier: "/conf/test",
+            tests: [
+              Modspec::ConformanceTest.new(
+                identifier: "/conf/test/a",
+                name: "CT-A",
+                targets: ["/req/test/a"],
+              ),
+            ],
+          ),
+        ],
+      )
+
+      suite.setup_relationships
+      ct = suite.conformance_classes.first.tests.first
+      expect(ct.corresponding_requirements.map(&:identifier)).to eq(["/req/test/a"])
+      expect(ct.parent_class).to eq(suite.conformance_classes.first)
+    end
+
+    it "handles missing target gracefully (no matching requirement)" do
+      suite = described_class.new(
+        identifier: "/suite",
+        name: "Test",
+        normative_statements_classes: [
+          Modspec::NormativeStatementsClass.new(
+            identifier: "/req/test",
+            normative_statements: [
+              Modspec::NormativeStatement.new(identifier: "/req/test/a",
+                                              name: "A", statement: "a"),
+            ],
+          ),
+        ],
+        conformance_classes: [
+          Modspec::ConformanceClass.new(
+            identifier: "/conf/test",
+            tests: [
+              Modspec::ConformanceTest.new(
+                identifier: "/conf/test/a",
+                name: "CT-A",
+                targets: ["/req/test/missing"],
+              ),
+            ],
+          ),
+        ],
+      )
+
+      suite.setup_relationships
+      ct = suite.conformance_classes.first.tests.first
+      expect(ct.corresponding_requirements).to be_empty
+    end
+
+    it "returns early when conformance_classes is nil" do
+      suite = described_class.new(
+        identifier: "/suite",
+        name: "Test",
+        normative_statements_classes: [
+          Modspec::NormativeStatementsClass.new(
+            identifier: "/req/test",
+            normative_statements: [],
+          ),
+        ],
+        conformance_classes: nil,
+      )
+
+      expect { suite.setup_relationships }.not_to raise_error
+    end
+  end
+
+  describe "#resolve_conflicts" do
+    let(:nsc_with_data) do
+      Modspec::NormativeStatementsClass.new(
+        identifier: "/req/test",
+        name: "Original",
+        description: "First description",
+        normative_statements: [
+          Modspec::NormativeStatement.new(identifier: "/req/test/a",
+                                          name: "A", statement: "a"),
+        ],
+      )
+    end
+
+    let(:nsc_partial) do
+      Modspec::NormativeStatementsClass.new(
+        identifier: "/req/test",
+        name: "Original",
+        description: "Second description",
+        subject: "Added subject",
+        normative_statements: [],
+      )
+    end
+
+    let(:nsc_other) do
+      Modspec::NormativeStatementsClass.new(
+        identifier: "/req/test2",
+        name: "Two",
+        normative_statements: [
+          Modspec::NormativeStatement.new(identifier: "/req/test2/b",
+                                          name: "B", statement: "b"),
+        ],
+      )
+    end
+
+    it "merges attributes of items with matching identifiers" do
+      suite1 = described_class.new(
+        identifier: "/suite", name: "Test1",
+        normative_statements_classes: [nsc_with_data],
+        conformance_classes: []
+      )
+      suite2 = described_class.new(
+        identifier: "/suite", name: "Test2",
+        normative_statements_classes: [nsc_partial],
+        conformance_classes: []
+      )
+
+      suite1.resolve_conflicts(suite2)
+      nsc = suite1.normative_statements_classes.first
+      expect(nsc.description).to eq("First description")
+      expect(nsc.subject).to eq("Added subject")
+    end
+
+    it "appends items with new identifiers" do
+      suite1 = described_class.new(
+        identifier: "/suite", name: "Test1",
+        normative_statements_classes: [nsc_with_data],
+        conformance_classes: []
+      )
+      suite2 = described_class.new(
+        identifier: "/suite", name: "Test2",
+        normative_statements_classes: [nsc_other],
+        conformance_classes: []
+      )
+
+      suite1.resolve_conflicts(suite2)
+      expect(suite1.normative_statements_classes.map(&:identifier)).to eq(
+        ["/req/test", "/req/test2"],
+      )
+    end
+  end
+
+  describe "YAML round-trip" do
+    it "serializes and deserializes a normative statements class" do
+      original = described_class.from_yaml(rc_yaml)
+      yaml_out = original.to_yaml
+      round_tripped = described_class.from_yaml(yaml_out)
+
+      expect(round_tripped.identifier).to eq(original.identifier)
+      expect(round_tripped.name).to eq(original.name)
+      expect(round_tripped.normative_statements_classes.count).to eq(
+        original.normative_statements_classes.count,
+      )
+    end
+
+    it "serializes and deserializes a conformance class" do
+      original = described_class.from_yaml(cc_yaml)
+      yaml_out = original.to_yaml
+      round_tripped = described_class.from_yaml(yaml_out)
+
+      expect(round_tripped.identifier).to eq(original.identifier)
+      expect(round_tripped.conformance_classes.count).to eq(
+        original.conformance_classes.count,
+      )
+    end
+  end
+
+  describe "JSON round-trip" do
+    let(:json_rc) { File.read("spec/fixtures/basic-ypr-json-rc.yaml") }
+    let(:json_cc) { File.read("spec/fixtures/basic-ypr-json-cc.yaml") }
+
+    it "parses JSON-format YAML fixtures" do
+      suite = described_class.from_yaml(json_rc)
+      expect(suite.normative_statements_classes).not_to be_empty
+    end
+
+    it "round-trips through JSON serialization" do
+      original = described_class.from_yaml(rc_yaml)
+      json_out = original.to_json
+      round_tripped = described_class.from_json(json_out)
+
+      expect(round_tripped.identifier).to eq(original.identifier)
+      expect(round_tripped.name).to eq(original.name)
     end
   end
 end
