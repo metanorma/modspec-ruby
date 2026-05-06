@@ -4,6 +4,8 @@ require "lutaml/model"
 
 module Modspec
   class ConformanceClass < Lutaml::Model::Serializable
+    include ChildContainer
+
     attribute :identifier, Identifier
     attribute :name, :string
     attribute :description, :string
@@ -14,6 +16,9 @@ module Modspec
     attribute :tests, ConformanceTest, collection: true
     attribute :belongs_to, Identifier, collection: true
     attribute :reference, :string
+
+    validates_children :tests, empty_label: "Conformance class",
+                               child_label: "conformance tests"
 
     xml do
       element "conformance-class"
@@ -31,28 +36,9 @@ module Modspec
 
     def validate
       errors = super
-      errors.concat(validate_identifier_prefix)
-      errors.concat(validate_class_children_mapping)
+      errors.concat(validate_children_identifier_prefix)
+      errors.concat(validate_children_presence)
       errors.concat(tests.flat_map(&:validate))
-      errors
-    end
-
-    private
-
-    def validate_class_children_mapping
-      if tests.nil? || tests.empty?
-        ["Conformance class #{identifier} has no child conformance tests"]
-      else
-        []
-      end
-    end
-
-    def validate_identifier_prefix
-      errors = []
-      expected_prefix = "#{identifier}/"
-      tests&.each do |test|
-        errors << "Conformance test #{test.identifier} does not share the expected prefix #{expected_prefix}" unless test.identifier.to_s.start_with?(expected_prefix)
-      end
       errors
     end
   end

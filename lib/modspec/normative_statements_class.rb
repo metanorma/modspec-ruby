@@ -4,6 +4,8 @@ require "lutaml/model"
 
 module Modspec
   class NormativeStatementsClass < Lutaml::Model::Serializable
+    include ChildContainer
+
     attribute :identifier, Identifier
     attribute :name, :string
     attribute :description, :string
@@ -15,6 +17,9 @@ module Modspec
     attribute :belongs_to, Identifier, collection: true
     attribute :reference, :string
     attribute :source, :string
+
+    validates_children :normative_statements, empty_label: "Requirement class",
+                                              child_label: "requirements"
 
     xml do
       element "normative-statements-class"
@@ -31,31 +36,12 @@ module Modspec
       map_element "source", to: :source
     end
 
-    def validate(suite = nil)
-      errors = super()
-      errors.concat(validate_identifier_prefix)
-      errors.concat(validate_class_children_mapping)
-      errors.concat(normative_statements.flat_map { |n| n.validate(suite) })
+    def validate
+      errors = super
+      errors.concat(validate_children_identifier_prefix)
+      errors.concat(validate_children_presence)
+      errors.concat(normative_statements.flat_map(&:validate))
       errors
-    end
-
-    private
-
-    def validate_identifier_prefix
-      return [] if normative_statements.nil? || normative_statements.empty?
-
-      expected_prefix = "#{identifier}/"
-      normative_statements.each_with_object([]) do |statement, errors|
-        errors << "Normative statement #{statement.identifier} does not share the expected prefix #{expected_prefix}" unless statement.identifier.to_s.start_with?(expected_prefix)
-      end
-    end
-
-    def validate_class_children_mapping
-      if normative_statements.nil? || normative_statements.empty?
-        ["Requirement class #{identifier} has no child requirements"]
-      else
-        []
-      end
     end
   end
 end

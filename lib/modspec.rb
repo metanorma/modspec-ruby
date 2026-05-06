@@ -5,6 +5,7 @@ require "lutaml/model"
 require "set"
 
 module Modspec
+  autoload :ChildContainer, "modspec/child_container"
   autoload :Identifier, "modspec/identifier"
   autoload :NormativeStatement, "modspec/normative_statement"
   autoload :NormativeStatementPart, "modspec/normative_statement"
