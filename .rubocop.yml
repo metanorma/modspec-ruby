@@ -20,3 +20,6 @@ AllCops:
 
 RSpec/ExampleLength:
   Max: 30
+
+RSpec/MultipleMemoizedHelpers:
+  Max: 14
