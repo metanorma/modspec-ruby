@@ -5,7 +5,7 @@ RSpec.describe Modspec::ConformanceTest do
     Modspec::NormativeStatement.new(
       identifier: "/req/basic-ypr/position",
       name: "Expression of outer frame",
-      statement: "The `Basic_YPR.position` attribute shall represent the outer frame, specified by an implicit WGS-84 CRS and an implicit EPSG 4461-CS (LTP-ENU) coordinate system and explicit parameters to define the tangent point.",
+      statement: "The `Basic_YPR.position` attribute shall represent the outer frame.",
     )
   end
 
@@ -22,7 +22,7 @@ RSpec.describe Modspec::ConformanceTest do
       identifier: "/conf/basic-ypr/position",
       name: "Verify expression of outer frame",
       targets: ["/req/basic-ypr/position"],
-      description: "To confirm that an implementation of a Basic-YPR consists of an Outer Frame specified by an implicit WGS-84 CRS and an implicit EPSG 4461-CS (LTP-ENU) coordinate system and explicit parameters to define the tangent point.",
+      description: "To confirm outer frame.",
       purpose: "Verify that this requirement is satisfied.",
       test_method: "Inspection",
     )
@@ -45,7 +45,7 @@ RSpec.describe Modspec::ConformanceTest do
   end
 
   before do
-    suite # Ensure the suite is created and relationships are set up
+    suite
   end
 
   it "has an identifier" do
@@ -64,6 +64,24 @@ RSpec.describe Modspec::ConformanceTest do
     it "returns no errors for a valid conformance test" do
       errors = conformance_test.validate
       expect(errors).to be_empty
+    end
+
+    it "returns errors when corresponding_requirements is nil" do
+      conformance_test.corresponding_requirements = nil
+      errors = conformance_test.validate
+      expect(errors).to include(a_string_matching(/no corresponding requirements/))
+    end
+
+    it "returns errors when corresponding_requirements is empty" do
+      conformance_test.corresponding_requirements = []
+      errors = conformance_test.validate
+      expect(errors).to include(a_string_matching(/no corresponding requirements/))
+    end
+
+    it "returns errors when parent_class is nil" do
+      conformance_test.parent_class = nil
+      errors = conformance_test.validate
+      expect(errors).to include(a_string_matching(/does not belong to its parent class/))
     end
   end
 

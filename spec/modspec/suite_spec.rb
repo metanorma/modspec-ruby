@@ -38,11 +38,173 @@ RSpec.describe Modspec::Suite do
         .combine(frame_spec_suite)
 
       errors = combined_suite.validate
-      if errors.any?
-
-        errors.each { |error| }
-      end
       expect(errors).to be_empty
+    end
+
+    it "detects duplicate identifiers" do
+      suite = described_class.new(
+        identifier: "/suite",
+        name: "Test",
+        normative_statements_classes: [
+          Modspec::NormativeStatementsClass.new(
+            identifier: "/req/test",
+            normative_statements: [
+              Modspec::NormativeStatement.new(identifier: "/req/test/a",
+                                              name: "A", statement: "a"),
+              Modspec::NormativeStatement.new(identifier: "/req/test/a",
+                                              name: "A2", statement: "a2"),
+            ],
+          ),
+        ],
+        conformance_classes: [],
+      )
+
+      errors = suite.validate
+      expect(errors).to include(a_string_matching(/Duplicate identifier/))
+    end
+
+    it "detects dependency cycles" do
+      ns_a = Modspec::NormativeStatement.new(
+        identifier: "/req/test/a", name: "A", statement: "a",
+        dependencies: ["/req/test/b"]
+      )
+      ns_b = Modspec::NormativeStatement.new(
+        identifier: "/req/test/b", name: "B", statement: "b",
+        dependencies: ["/req/test/a"]
+      )
+
+      suite = described_class.new(
+        identifier: "/suite",
+        name: "Test",
+        normative_statements_classes: [
+          Modspec::NormativeStatementsClass.new(
+            identifier: "/req/test",
+            normative_statements: [ns_a, ns_b],
+          ),
+        ],
+        conformance_classes: [],
+      )
+
+      errors = suite.validate
+      expect(errors).to include(a_string_matching(/Cycle detected/))
+    end
+
+    it "detects invalid dependencies" do
+      suite = described_class.new(
+        identifier: "/suite",
+        name: "Test",
+        normative_statements_classes: [
+          Modspec::NormativeStatementsClass.new(
+            identifier: "/req/test",
+            dependencies: ["/req/nonexistent"],
+            normative_statements: [
+              Modspec::NormativeStatement.new(
+                identifier: "/req/test/a", name: "A", statement: "a",
+                dependencies: ["/req/missing"]
+              ),
+            ],
+          ),
+        ],
+        conformance_classes: [],
+      )
+
+      errors = suite.validate
+      expect(errors).to include(a_string_matching(/Invalid dependencies .* in \/req\/test\b/))
+      expect(errors).to include(a_string_matching(/Invalid dependencies .* in \/req\/test\/a/))
+    end
+
+    it "detects invalid conformance test targets" do
+      suite = described_class.new(
+        identifier: "/suite",
+        name: "Test",
+        normative_statements_classes: [
+          Modspec::NormativeStatementsClass.new(
+            identifier: "/req/test",
+            normative_statements: [
+              Modspec::NormativeStatement.new(identifier: "/req/test/a",
+                                              name: "A", statement: "a"),
+            ],
+          ),
+        ],
+        conformance_classes: [
+          Modspec::ConformanceClass.new(
+            identifier: "/conf/test",
+            tests: [
+              Modspec::ConformanceTest.new(
+                identifier: "/conf/test/a",
+                name: "CT-A",
+                targets: ["/req/nonexistent"],
+              ),
+            ],
+          ),
+        ],
+      )
+
+      errors = suite.validate
+      expect(errors).to include(a_string_matching(/Invalid targets .* in \/conf\/test\/a/))
+    end
+
+    it "detects invalid indirect_dependency references" do
+      suite = described_class.new(
+        identifier: "/suite",
+        name: "Test",
+        normative_statements_classes: [
+          Modspec::NormativeStatementsClass.new(
+            identifier: "/req/test",
+            normative_statements: [
+              Modspec::NormativeStatement.new(
+                identifier: "/req/test/a", name: "A", statement: "a",
+                indirect_dependency: ["/req/ghost"]
+              ),
+            ],
+          ),
+        ],
+        conformance_classes: [],
+      )
+
+      errors = suite.validate
+      expect(errors).to include(a_string_matching(/indirect dependency.*in \/req\/test\/a/))
+    end
+
+    it "detects invalid implements references" do
+      suite = described_class.new(
+        identifier: "/suite",
+        name: "Test",
+        normative_statements_classes: [
+          Modspec::NormativeStatementsClass.new(
+            identifier: "/req/test",
+            implements: ["/req/phantom"],
+            normative_statements: [],
+          ),
+        ],
+        conformance_classes: [],
+      )
+
+      errors = suite.validate
+      expect(errors).to include(a_string_matching(/implements.*in \/req\/test/))
+    end
+
+    it "detects invalid conformance test dependencies" do
+      suite = described_class.new(
+        identifier: "/suite",
+        name: "Test",
+        normative_statements_classes: [],
+        conformance_classes: [
+          Modspec::ConformanceClass.new(
+            identifier: "/conf/test",
+            tests: [
+              Modspec::ConformanceTest.new(
+                identifier: "/conf/test/a",
+                name: "CT-A",
+                dependencies: ["/conf/nonexistent"],
+              ),
+            ],
+          ),
+        ],
+      )
+
+      errors = suite.validate
+      expect(errors).to include(a_string_matching(/Invalid dependencies .* in \/conf\/test\/a/))
     end
   end
 
@@ -63,6 +225,16 @@ RSpec.describe Modspec::Suite do
       )
     end
 
+    it "raises ArgumentError for non-Suite argument" do
+      expect { suite1.combine("not a suite") }.to raise_error(ArgumentError)
+    end
+
+    it "deduplicates by identifier" do
+      combined = suite1.combine(suite1)
+      nsc_count = combined.normative_statements_classes.count
+      expect(nsc_count).to eq(suite1.normative_statements_classes.count)
+    end
+
     it "resolves conflicts when combining suites" do
       combined_suite = suite1
         .combine(suite2)
@@ -72,10 +244,6 @@ RSpec.describe Modspec::Suite do
         .combine(frame_spec_suite)
 
       errors = combined_suite.validate
-      if errors.any?
-
-        errors.each { |error|  }
-      end
       expect(errors).to be_empty
     end
   end
@@ -89,24 +257,13 @@ RSpec.describe Modspec::Suite do
       expect(combined_suite).to be_a(described_class)
       expect(combined_suite.name).to eq("Combined Suite")
 
-      # Ensure the combined suite has content
       expect(combined_suite.normative_statements_classes).not_to be_empty
       expect(combined_suite.conformance_classes).not_to be_empty
 
-      # Validate the combined suite
       errors = combined_suite.validate
-
-      if errors.any?
-
-        errors.each { |error|  }
-      end
-
-      # Check for specific error types
-      expect(errors).not_to include(a_string_matching(/Conformance test .* has no corresponding requirement/))
+      expect(errors).not_to include(a_string_matching(/has no corresponding requirement/))
       expect(errors).not_to include(a_string_matching(/Cycle detected/))
-      expect(errors).not_to include(a_string_matching(/Requirement .* has an invalid dependency/))
-
-      # If there are still errors, they should be of a different nature
+      expect(errors).not_to include(a_string_matching(/has an invalid dependency/))
       expect(errors).to be_empty
     end
   end
