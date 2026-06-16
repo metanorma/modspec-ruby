@@ -2,24 +2,9 @@
 # See https://github.com/metanorma/cimas
 inherit_from:
   - https://raw.githubusercontent.com/riboseinc/oss-guides/main/ci/rubocop.yml
-  - .rubocop_todo.yml
-
-inherit_mode:
-  merge:
-    - Exclude
 
 # local repo-specific modifications
 # ...
-plugins:
-  - rubocop-rspec
-  - rubocop-performance
-  - rubocop-rake
 
 AllCops:
-  TargetRubyVersion: 3.0
-
-RSpec/ExampleLength:
-  Max: 30
-
-RSpec/MultipleMemoizedHelpers:
-  Max: 14
+  TargetRubyVersion: 3.4
